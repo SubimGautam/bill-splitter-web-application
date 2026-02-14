@@ -747,7 +747,7 @@ export default function DashboardPage() {
                 >
                   <FaSignOutAlt /> Sign Out
                 </button>
-              </div>
+              </div> 
             </div>
           </div>
         </div>
