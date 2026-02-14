@@ -294,7 +294,7 @@ export default function SignupPage() {
             }}>
               Log in here
             </Link>
-          </p>
+          </p> 
         </div>
       </div>
     </div>
