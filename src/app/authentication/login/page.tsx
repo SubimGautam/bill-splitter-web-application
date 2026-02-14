@@ -382,7 +382,7 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
-        </div>
+        </div> 
       </div>
     </div>
   );
