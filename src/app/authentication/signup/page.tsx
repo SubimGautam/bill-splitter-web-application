@@ -367,7 +367,7 @@ export default function SignupPage() {
               }}>
                 Log in
               </Link>
-            </p>
+            </p> 
           </div>
         </div>
       </div>
