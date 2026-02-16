@@ -6,21 +6,7 @@ import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { useRouter } from "next/navigation";
 
-const API_BASE_URL = "http://localhost:5000/api";
-
-interface ApiResponse {
-  success: boolean;
-  message: string;
-  data?: {
-    token: string;
-    user: {
-      id: string;
-      username: string;
-      email: string;
-      role: string;
-    };
-  };
-}
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,27 +14,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // Check if user is already logged in
+  // Check if already logged in
   useEffect(() => {
-    const checkAuth = () => {
-      const user = localStorage.getItem("user");
-      const token = document.cookie.includes('token=');
-      
-      if (user && token) {
-        console.log("User already logged in, redirecting to dashboard");
-        router.push("/dashboard");
-      } else {
-        // Clear any stale data
-        localStorage.removeItem("user");
-        document.cookie = 'token=; path=/; max-age=0';
-      }
-      setIsCheckingAuth(false);
-      setMounted(true);
-    };
-
-    checkAuth();
+    setMounted(true);
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+    if (token && user) {
+      router.push("/dashboard");
+    }
   }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -59,62 +33,41 @@ export default function LoginPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-        credentials: "include" // Important for cookies
       });
 
-      const data: ApiResponse = await res.json();
+      const data = await res.json();
 
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Login failed");
       }
 
       if (data.data) {
-        // Store authentication data
-        // Set cookie with secure options
-        document.cookie = `token=${data.data.token}; path=/; max-age=86400; samesite=strict`;
+        // Store token in both cookie and localStorage for redundancy
+        document.cookie = `token=${data.data.token}; path=/; max-age=604800; samesite=lax`;
+        localStorage.setItem("token", data.data.token);
         localStorage.setItem("user", JSON.stringify(data.data.user));
-        
-        console.log("Login successful, redirecting to dashboard");
-        
-        // Clear form
-        setFormData({ email: "", password: "" });
         
         // Redirect to dashboard
         router.push("/dashboard");
         
-        // Refresh to ensure proper state update
+        // Force a hard refresh to ensure auth state is updated
         setTimeout(() => {
-          router.refresh();
+          window.location.href = "/dashboard";
         }, 100);
-      } else {
-        throw new Error("No user data received");
       }
     } catch (err: any) {
       setError(err.message || "Invalid email or password");
       console.error("Login error:", err);
-      
-      // Clear any partial auth data on error
-      localStorage.removeItem("user");
-      document.cookie = 'token=; path=/; max-age=0';
     } finally {
       setLoading(false);
     }
   };
 
-  // Don't render anything until mounted and auth check is complete
-  if (!mounted || isCheckingAuth) {
+  if (!mounted) {
     return (
-      <div style={{ 
-        minHeight: "100vh", 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center",
-        backgroundColor: "#fff" 
-      }}>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center" }}>
           <div style={{
             width: "3rem",
@@ -137,24 +90,13 @@ export default function LoginPage() {
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-        
         @media (min-width: 1024px) {
-          .desktop-left-image {
-            display: flex !important;
-            width: 60% !important;
-          }
-          
-          .desktop-right-form {
-            width: 40% !important;
-          }
-          
-          .main-container {
-            flex-direction: row !important;
-          }
+          .main-container { flex-direction: row !important; }
+          .desktop-left-image { display: flex !important; width: 60% !important; }
+          .desktop-right-form { width: 40% !important; }
         }
       `}</style>
       
-      {/* HEADER */}
       <header style={{
         position: "absolute",
         top: 0,
@@ -181,38 +123,31 @@ export default function LoginPage() {
         </div>
 
         <div style={{ display: "flex", gap: "1rem" }}>
-          <Link 
-            href="/authentication/signup" 
-            style={{
-              padding: "0.5rem 1.25rem",
-              backgroundColor: "#10b981",
-              color: "white",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              borderRadius: "0.375rem",
-              textDecoration: "none"
-            }}
-          >
+          <Link href="/authentication/signup" style={{
+            padding: "0.5rem 1.25rem",
+            backgroundColor: "#10b981",
+            color: "white",
+            fontSize: "0.875rem",
+            fontWeight: 500,
+            borderRadius: "0.375rem",
+            textDecoration: "none"
+          }}>
             Sign Up
           </Link>
-          <Link 
-            href="/authentication/login" 
-            style={{
-              padding: "0.5rem 1.25rem",
-              backgroundColor: "#10b981",
-              color: "white",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              borderRadius: "0.375rem",
-              textDecoration: "none"
-            }}
-          >
+          <Link href="/authentication/login" style={{
+            padding: "0.5rem 1.25rem",
+            backgroundColor: "#10b981",
+            color: "white",
+            fontSize: "0.875rem",
+            fontWeight: 500,
+            borderRadius: "0.375rem",
+            textDecoration: "none"
+          }}>
             Login
           </Link>
         </div>
       </header>
 
-      {/* Main Content */}
       <div style={{ 
         display: "flex", 
         minHeight: "100vh", 
@@ -220,7 +155,6 @@ export default function LoginPage() {
         flexDirection: "column"
       }} className="main-container">
         
-        {/* Left Image - Hidden on mobile */}
         <div style={{
           display: "none",
           alignItems: "center",
@@ -237,7 +171,6 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* Right Form Section */}
         <div style={{
           width: "100%",
           display: "flex",
@@ -253,7 +186,6 @@ export default function LoginPage() {
               <p style={{ color: "#4b5563", fontSize: "0.875rem" }}>Log in to your account</p>
             </div>
 
-            {/* Error/Success Messages */}
             {error && (
               <div style={{
                 padding: "0.75rem",
@@ -268,7 +200,6 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Google Sign In */}
             <button style={{
               display: "flex",
               alignItems: "center",
@@ -287,14 +218,12 @@ export default function LoginPage() {
               <span>Sign in with Google</span>
             </button>
 
-            {/* Divider */}
             <div style={{ display: "flex", alignItems: "center", margin: "1.5rem 0" }}>
               <div style={{ flex: 1, borderTop: "1px solid #d1d5db" }}></div>
               <span style={{ padding: "0 1rem", color: "#6b7280", fontSize: "0.875rem" }}>OR</span>
               <div style={{ flex: 1, borderTop: "1px solid #d1d5db" }}></div>
             </div>
 
-            {/* Login Form */}
             <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <input
                 type="email"
@@ -370,7 +299,6 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Sign Up Link */}
             <p style={{ textAlign: "center", fontSize: "0.875rem", color: "#4b5563", marginTop: "2rem" }}>
               Don't have an account?{" "}
               <Link href="/authentication/signup" style={{
@@ -382,7 +310,7 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
-        </div> 
+        </div>
       </div>
     </div>
   );
