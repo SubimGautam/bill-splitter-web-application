@@ -8,8 +8,8 @@ import { api } from '@/lib/api';
 interface ExpensesSectionProps {
   expenses: Expense[];
   onExpenseAdded?: () => void;
-  groupId: string;        // This should be the MongoDB ObjectId
-  userId: string;         // This should be the user's MongoDB ObjectId
+  groupId: string; // This should be the MongoDB ObjectId
+  userId: string; // This should be the user's MongoDB ObjectId
 }
 
 export const ExpensesSection = ({ expenses, onExpenseAdded, groupId, userId }: ExpensesSectionProps) => {
@@ -55,11 +55,13 @@ export const ExpensesSection = ({ expenses, onExpenseAdded, groupId, userId }: E
         paidBy: userId,
         splitWith: [], // Empty array means split with all group members
         groupId: groupId,
+        splitType: 'equal', // Added for consistency
+        participants: [] // Added for consistency (empty for equal split)
       });
 
       setNewExpense({ description: '', amount: '' });
       setShowAddModal(false);
-      
+     
       if (onExpenseAdded) {
         onExpenseAdded();
       }
@@ -164,7 +166,7 @@ export const ExpensesSection = ({ expenses, onExpenseAdded, groupId, userId }: E
           }}
           onClick={(e) => e.stopPropagation()}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Add New Expense</h3>
-            
+           
             {error && (
               <div style={{
                 padding: '0.75rem',
@@ -195,7 +197,7 @@ export const ExpensesSection = ({ expenses, onExpenseAdded, groupId, userId }: E
                 min="0.01"
                 step="0.01"
               />
-              
+             
               {/* Display the group and user info (read-only) */}
               <div style={{
                 padding: '0.75rem',
@@ -214,11 +216,11 @@ export const ExpensesSection = ({ expenses, onExpenseAdded, groupId, userId }: E
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
                 <button
                   onClick={() => setShowAddModal(false)}
-                  style={{ 
-                    padding: '0.5rem 1rem', 
-                    backgroundColor: '#f3f4f6', 
-                    border: 'none', 
-                    borderRadius: '0.5rem', 
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#f3f4f6',
+                    border: 'none',
+                    borderRadius: '0.5rem',
                     cursor: 'pointer',
                     fontWeight: 500
                   }}

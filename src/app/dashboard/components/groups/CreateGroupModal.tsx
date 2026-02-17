@@ -1,47 +1,49 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { FaTimes, FaUserPlus, FaUsers } from 'react-icons/fa';
+
+// Assuming User from api has { id, username, email, ... }
+import type { User } from '@/lib/api';   // ← make sure this import exists
 
 interface CreateGroupModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
 
+// We now use the same shape as User (with id instead of userId)
+type Friend = Pick<User, 'id' | 'username' | 'email'>;
+
 export const CreateGroupModal = ({ onClose, onSuccess }: CreateGroupModalProps) => {
   const [groupName, setGroupName] = useState('');
-  const [usernameInput, setUsernameInput] = useState('');
-  const [selectedMembers, setSelectedMembers] = useState<{ id: string; username: string }[]>([]);
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([]); // array of user IDs
+  const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingFriends, setLoadingFriends] = useState(true);
   const [error, setError] = useState('');
-  const [searchLoading, setSearchLoading] = useState(false);
 
-  const handleAddMember = async () => {
-  if (!usernameInput.trim()) return;
-  setSearchLoading(true);
-  setError('');
-  try {
-    const users = await api.searchUsers(usernameInput);
-    if (users.length === 0) {
-      setError('User not found');
-      return;
-    }
-    const user = users[0];
-    if (selectedMembers.some(m => m.id === user.id || m.id === user._id)) {
-      setError('User already added');
-      return;
-    }
-    setSelectedMembers([....selectedMembers, { id: user.id || user._id, username: user.username }]);
-    setUsernameInput('');
-  } catch (err) {
-    setError('Failed to search user');
-  } finally {
-    setSearchLoading(false);
-  }
-};
+  useEffect(() => {
+    loadFriends();
+  }, []);
 
-  const removeMember = (userId: string) => {
-    setSelectedMembers(selectedMembers.filter(m => m.id !== userId));
+  const loadFriends = async () => {
+    try {
+      setLoadingFriends(true);
+      const friendsData = await api.getFriends();           // hopefully returns { id, username, email }[]
+      setFriends(friendsData);
+    } catch (err) {
+      console.error('Failed to load friends:', err);
+      setError('Failed to load friends. Please try again.');
+    } finally {
+      setLoadingFriends(false);
+    }
+  };
+
+  const toggleFriend = (userId: string) => {
+    setSelectedFriends((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,13 +52,14 @@ export const CreateGroupModal = ({ onClose, onSuccess }: CreateGroupModalProps) 
       setError('Group name is required');
       return;
     }
+
     setLoading(true);
     setError('');
 
     try {
       await api.createGroup({
-        name: groupName,
-        memberIds: selectedMembers.map(m => m.id)
+        name: groupName.trim(),
+        memberIds: selectedFriends,
       });
       onSuccess();
     } catch (err: any) {
@@ -68,73 +71,97 @@ export const CreateGroupModal = ({ onClose, onSuccess }: CreateGroupModalProps) 
 
   return (
     <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modal} onClick={e => e.stopPropagation()}>
-        <h2 style={styles.title}>Create New Group</h2>
+      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.header}>
+          <h2 style={styles.title}>Create New Group</h2>
+          <button onClick={onClose} style={styles.closeButton}>
+            <FaTimes />
+          </button>
+        </div>
 
         {error && <div style={styles.error}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          {/* Group name */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Group Name</label>
             <input
               type="text"
               value={groupName}
-              onChange={e => setGroupName(e.target.value)}
+              onChange={(e) => setGroupName(e.target.value)}
               style={styles.input}
+              placeholder="e.g., Family Trip 2025"
               required
             />
           </div>
 
-          {/* Add members by username */}
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Add Members (by username)</label>
-            <div style={styles.addRow}>
-              <input
-                type="text"
-                value={usernameInput}
-                onChange={e => setUsernameInput(e.target.value)}
-                onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddMember())}
-                style={styles.input}
-                placeholder="Enter username"
-              />
-              <button
-                type="button"
-                onClick={handleAddMember}
-                disabled={searchLoading}
-                style={styles.addButton}
-              >
-                {searchLoading ? '...' : 'Add'}
-              </button>
-            </div>
-          </div>
+            <label style={styles.label}>
+              <FaUsers style={{ marginRight: '0.5rem' }} />
+              Add Friends ({selectedFriends.length} selected)
+            </label>
 
-          {/* Selected members list */}
-          {selectedMembers.length > 0 && (
-            <div style={styles.selectedList}>
-              <label style={styles.label}>Selected Members</label>
-              <div style={styles.tags}>
-                {selectedMembers.map(member => (
-                  <div key={member.id} style={styles.tag}>
-                    <span>{member.username}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeMember(member.id)}
-                      style={styles.removeTag}
+            {loadingFriends ? (
+              <div style={styles.loadingBox}>Loading friends...</div>
+            ) : friends.length === 0 ? (
+              <div style={styles.emptyBox}>
+                <p>No friends found yet.</p>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
+                  Add some friends first from the friends page.
+                </p>
+              </div>
+            ) : (
+              <div style={styles.friendsList}>
+                {friends.map((friend) => (
+                  <div
+                    key={friend.id}
+                    onClick={() => toggleFriend(friend.id)}
+                    style={{
+                      ...styles.friendItem,
+                      backgroundColor: selectedFriends.includes(friend.id) ? '#d1fae5' : '#f9fafb',
+                      borderColor: selectedFriends.includes(friend.id) ? '#10b981' : '#e5e7eb',
+                    }}
+                  >
+                    <div style={styles.friendInfo}>
+                      <div
+                        style={{
+                          ...styles.avatar,
+                          backgroundColor: selectedFriends.includes(friend.id) ? '#10b981' : '#6b7280',
+                        }}
+                      >
+                        {friend.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={styles.friendName}>{friend.username}</div>
+                        <div style={styles.friendEmail}>{friend.email}</div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        ...styles.checkbox,
+                        backgroundColor: selectedFriends.includes(friend.id) ? '#10b981' : 'white',
+                      }}
                     >
-                      ×
-                    </button>
+                      {selectedFriends.includes(friend.id) && '✓'}
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div style={styles.actions}>
             <button type="button" onClick={onClose} style={styles.cancelButton}>
               Cancel
             </button>
-            <button type="submit" disabled={loading} style={styles.submitButton}>
+            <button
+              type="submit"
+              disabled={loading || !groupName.trim()}
+              style={{
+                ...styles.submitButton,
+                opacity: loading || !groupName.trim() ? 0.6 : 1,
+                cursor: loading || !groupName.trim() ? 'not-allowed' : 'pointer',
+              }}
+            >
               {loading ? 'Creating...' : 'Create Group'}
             </button>
           </div>
@@ -159,99 +186,158 @@ const styles = {
   },
   modal: {
     backgroundColor: 'white',
-    borderRadius: '8px',
-    padding: '24px',
+    borderRadius: '1rem',
+    padding: '0',
     maxWidth: '500px',
     width: '90%',
-    maxHeight: '80vh',
-    overflow: 'auto'
+    maxHeight: '90vh',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column' as const
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1.5rem',
+    borderBottom: '1px solid #e5e7eb'
   },
   title: {
-    fontSize: '24px',
+    fontSize: '1.25rem',
     fontWeight: 'bold' as const,
-    marginBottom: '20px'
+    margin: 0
   },
-  error: {
-    padding: '12px',
-    backgroundColor: '#fee2e2',
-    border: '1px solid #fecaca',
-    borderRadius: '4px',
-    color: '#dc2626',
-    marginBottom: '16px'
-  },
-  inputGroup: {
-    marginBottom: '20px'
-  },
-  label: {
-    display: 'block',
-    marginBottom: '8px',
-    fontWeight: 500
-  },
-  input: {
-    flex: 1,
-    padding: '10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '4px',
-    fontSize: '16px'
-  },
-  addRow: {
-    display: 'flex',
-    gap: '8px'
-  },
-  addButton: {
-    padding: '10px 20px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap' as const
-  },
-  selectedList: {
-    marginBottom: '20px'
-  },
-  tags: {
-    display: 'flex',
-    flexWrap: 'wrap' as const,
-    gap: '8px',
-    marginTop: '8px'
-  },
-  tag: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '6px 12px',
-    backgroundColor: '#e0f2fe',
-    borderRadius: '20px',
-    fontSize: '14px'
-  },
-  removeTag: {
+  closeButton: {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    fontSize: '18px',
+    fontSize: '1.25rem',
     color: '#6b7280',
-    marginLeft: '4px'
+    padding: '0.25rem'
+  },
+  error: {
+    margin: '1.5rem 1.5rem 0',
+    padding: '0.75rem',
+    backgroundColor: '#fee2e2',
+    border: '1px solid #fecaca',
+    borderRadius: '0.5rem',
+    color: '#dc2626',
+    fontSize: '0.875rem'
+  },
+  inputGroup: {
+    padding: '0 1.5rem',
+    marginTop: '1.5rem'
+  },
+  label: {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: '0.5rem',
+    fontWeight: 500,
+    fontSize: '0.875rem'
+  },
+  input: {
+    width: '100%',
+    padding: '0.75rem',
+    border: '1px solid #d1d5db',
+    borderRadius: '0.5rem',
+    fontSize: '1rem',
+    boxSizing: 'border-box' as const
+  },
+  friendsList: {
+    maxHeight: '300px',
+    overflow: 'auto',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '0.5rem',
+    padding: '0.5rem',
+    backgroundColor: '#f9fafb',
+    borderRadius: '0.5rem',
+    border: '1px solid #e5e7eb'
+  },
+  friendItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.75rem',
+    borderRadius: '0.5rem',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    border: '2px solid'
+  },
+  friendInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem'
+  },
+  avatar: {
+    width: '2.5rem',
+    height: '2.5rem',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    fontWeight: 'bold' as const,
+    fontSize: '1rem'
+  },
+  friendName: {
+    fontWeight: 500,
+    color: '#111827'
+  },
+  friendEmail: {
+    fontSize: '0.75rem',
+    color: '#6b7280'
+  },
+  checkbox: {
+    width: '1.5rem',
+    height: '1.5rem',
+    borderRadius: '0.25rem',
+    border: '2px solid #d1d5db',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    fontWeight: 'bold' as const,
+    fontSize: '1rem'
+  },
+  loadingBox: {
+    padding: '2rem',
+    textAlign: 'center' as const,
+    color: '#6b7280',
+    backgroundColor: '#f9fafb',
+    borderRadius: '0.5rem'
+  },
+  emptyBox: {
+    padding: '2rem',
+    textAlign: 'center' as const,
+    backgroundColor: '#f9fafb',
+    borderRadius: '0.5rem',
+    border: '1px solid #e5e7eb'
   },
   actions: {
     display: 'flex',
-    gap: '12px',
+    gap: '0.75rem',
     justifyContent: 'flex-end',
-    marginTop: '20px'
+    padding: '1.5rem',
+    borderTop: '1px solid #e5e7eb',
+    marginTop: '1.5rem'
   },
   cancelButton: {
-    padding: '10px 20px',
+    padding: '0.75rem 1.5rem',
     backgroundColor: '#f3f4f6',
     border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer'
+    borderRadius: '0.5rem',
+    cursor: 'pointer',
+    fontWeight: 500,
+    fontSize: '0.875rem'
   },
   submitButton: {
-    padding: '10px 20px',
+    padding: '0.75rem 1.5rem',
     backgroundColor: '#10b981',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer'
+    borderRadius: '0.5rem',
+    fontWeight: 500,
+    fontSize: '0.875rem'
   }
 };

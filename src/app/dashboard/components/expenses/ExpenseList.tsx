@@ -17,7 +17,7 @@ export const ExpenseList = ({ expenses, onExpenseUpdated, currentUserId }: Expen
 
   const handleDelete = async (expenseId: string) => {
     if (!confirm('Are you sure you want to delete this expense?')) return;
-    
+   
     try {
       await api.deleteExpense(expenseId);
       onExpenseUpdated();
@@ -27,7 +27,7 @@ export const ExpenseList = ({ expenses, onExpenseUpdated, currentUserId }: Expen
   };
 
   const handleEdit = (expense: any) => {
-    setEditingId(expense.id);
+    setEditingId(expense._id); // Changed to _id for consistency
     setEditDescription(expense.description);
     setEditAmount(expense.amount.toString());
   };
@@ -57,7 +57,7 @@ export const ExpenseList = ({ expenses, onExpenseUpdated, currentUserId }: Expen
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {expenses.map((expense) => (
-        <div key={expense.id} style={{
+        <div key={expense._id} style={{  // Changed to _id
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -66,7 +66,7 @@ export const ExpenseList = ({ expenses, onExpenseUpdated, currentUserId }: Expen
           borderRadius: '0.75rem',
           transition: 'background-color 0.2s'
         }}>
-          {editingId === expense.id ? (
+          {editingId === expense._id ? (  // Changed to _id
             // Edit mode
             <div style={{ flex: 1, display: 'flex', gap: '0.5rem' }}>
               <input
@@ -82,7 +82,7 @@ export const ExpenseList = ({ expenses, onExpenseUpdated, currentUserId }: Expen
                 style={{ flex: 1, padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.25rem' }}
               />
               <button
-                onClick={() => handleSaveEdit(expense.id)}
+                onClick={() => handleSaveEdit(expense._id)}  // Changed to _id
                 style={{ padding: '0.5rem 1rem', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '0.25rem' }}
               >
                 Save
@@ -127,7 +127,7 @@ export const ExpenseList = ({ expenses, onExpenseUpdated, currentUserId }: Expen
                       <FaEdit />
                     </button>
                     <button
-                      onClick={() => handleDelete(expense.id)}
+                      onClick={() => handleDelete(expense._id)}  // Changed to _id
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626' }}
                     >
                       <FaTrash />
