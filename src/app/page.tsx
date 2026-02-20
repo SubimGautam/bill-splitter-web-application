@@ -1,113 +1,329 @@
-// src/app/page.tsx
+"use client";
+
+import Image from "next/image";
 import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-white">
-      <header className="w-full flex justify-between items-center px-6 md:px-10 py-6">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-emerald-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">$</span>
+    <>
+      <div className="page">
+
+        {/* HEADER */}
+        <header className="header">
+
+          <div className="logo">
+            <Image
+              src="/images/logo.png"
+              alt="Splito Logo"
+              width={36}
+              height={36}
+            />
+            <span>Splito</span>
           </div>
-          <span className="text-xl font-bold text-gray-900">Splito</span>
-        </div>
 
-        <div className="flex gap-4">
-          <Link 
-            href="/authentication/signup" 
-            className="px-5 py-2 rounded-md text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
-          >
-            Sign Up
-          </Link>
-          <Link 
-            href="/authentication/login" 
-            className="px-5 py-2 rounded-md bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition-colors"
-          >
-            Login
-          </Link>
-        </div>
-      </header>
+          <div className="nav">
+            <Link href="/authentication/signup" className="btn-outline">
+              Sign Up
+            </Link>
 
-      <main className="container mx-auto px-4 py-16 md:py-24">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight">
-              Split bills
-              <span className="text-emerald-500 block">with ease</span>
+            <Link href="/authentication/login" className="btn-primary">
+              Login
+            </Link>
+          </div>
+
+        </header>
+
+
+        {/* MAIN */}
+        <main className="main">
+
+          {/* LEFT */}
+          <div className="left">
+
+            <h1>
+              Manage Group<br />
+              Expenses the<br />
+              Easy Way
             </h1>
-            
-            <p className="text-xl text-gray-600 max-w-lg">
-              Split expenses with friends, roommates, and family. 
-              Keep track of who owes what, settle up quickly, and never 
-              have awkward money conversations again.
+
+            <p className="subtitle">
+              Helps you to organize your Bills
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/authentication/signup"
-                className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded-lg text-white bg-emerald-500 hover:bg-emerald-600 transition-colors"
-              >
-                Get Started Free
-              </Link>
-              <Link
-                href="/authentication/login"
-                className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                I already have an account
-              </Link>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
-              <div className="space-y-2">
-                <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <span className="text-emerald-600 font-bold">✓</span>
-                </div>
-                <h3 className="font-medium text-gray-900">Easy Tracking</h3>
-                <p className="text-sm text-gray-600">Track expenses in real-time</p>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <span className="text-emerald-600 font-bold">⚡</span>
-                </div>
-                <h3 className="font-medium text-gray-900">Quick Settlements</h3>
-                <p className="text-sm text-gray-600">Settle up with one click</p>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <span className="text-emerald-600 font-bold">🔒</span>
-                </div>
-                <h3 className="font-medium text-gray-900">Secure</h3>
-                <p className="text-sm text-gray-600">Your data is always safe</p>
-              </div>
-            </div>
-          </div>
+            {/* STATS CARD */}
+            <div className="statsCard">
 
-          <div className="relative">
-            <div className="relative w-full h-[500px] lg:h-[600px]">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 rounded-3xl"></div>
-              <div className="absolute inset-8 bg-gradient-to-br from-emerald-100/50 to-white rounded-2xl border border-emerald-100 flex items-center justify-center">
-                <div className="text-center p-8">
-                  <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <span className="text-white text-3xl font-bold">$</span>
+              <div className="statsHeader">
+
+                <div>
+                  <span className="label">LAST MONTH</span>
+
+                  <div className="date">
+                    <strong>28</strong>
+                    <div>
+                      Monday<br />
+                      June 2021
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Split Made Simple</h3>
-                  <p className="text-gray-600">Try Splito today and simplify your group expenses</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
 
-      <footer className="mt-20 py-8 border-t border-gray-200">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-600 text-sm">
-            © {new Date().getFullYear()} Splito. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+                </div>
+
+
+                <div className="thisMonth">
+
+                  <span className="label">THIS MONTH</span>
+
+                  <div className="amount">
+                    +10,200
+                  </div>
+
+                </div>
+
+              </div>
+
+
+              <div className="category">
+
+                <span>🚗 Transportation</span>
+                <span>50,000</span>
+
+              </div>
+
+
+              <div className="category">
+
+                <span>🍔 Food & Beverage</span>
+                <span>35000</span>
+
+              </div>
+
+            </div>
+
+
+          </div>
+
+
+
+          {/* RIGHT */}
+          <div className="right">
+
+            <Image
+              src="/images/landing-illustration.png"
+              alt="illustration"
+              width={420}
+              height={420}
+              className="illustration"
+            />
+
+
+            <Image
+              src="/images/tyre.png"
+              alt="tyre"
+              width={260}
+              height={260}
+              className="tyre"
+            />
+
+
+            <div className="featureCard">
+
+              <h3>Split bill the easy way</h3>
+
+              <p>
+                You can quickly log daily transactions within seconds and organize
+                them into clean, visual categories like Expenses, Food, Shopping or Income.
+                Salary, Gift, making group expense tracking simple and transparent.
+              </p>
+
+            </div>
+
+          </div>
+
+        </main>
+
+
+      </div>
+
+
+
+      {/* CSS INSIDE SAME FILE */}
+      <style jsx>{`
+
+        .page{
+          min-height:100vh;
+          background:#f5f6f8;
+          padding:40px 80px;
+          font-family: Inter, sans-serif;
+        }
+
+
+        .header{
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+        }
+
+
+        .logo{
+          display:flex;
+          align-items:center;
+          gap:10px;
+          font-size:20px;
+          font-weight:600;
+        }
+
+
+        .nav{
+          display:flex;
+          gap:20px;
+        }
+
+
+        .btn-primary{
+          background:#22c55e;
+          color:white;
+          padding:10px 26px;
+          border-radius:6px;
+          text-decoration:none;
+          font-weight:500;
+        }
+
+
+        .btn-outline{
+          background:#22c55e;
+          color:white;
+          padding:10px 26px;
+          border-radius:6px;
+          text-decoration:none;
+        }
+
+
+        .main{
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          margin-top:60px;
+        }
+
+
+        .left{
+          max-width:520px;
+        }
+
+
+        h1{
+          font-size:64px;
+          font-weight:800;
+          line-height:1.1;
+          color:#2d2d2d;
+        }
+
+
+        .subtitle{
+          margin-top:10px;
+          color:#9ca3af;
+        }
+
+
+
+        .statsCard{
+          margin-top:40px;
+          background:white;
+          padding:24px;
+          border-radius:12px;
+          box-shadow:0 4px 20px rgba(0,0,0,0.05);
+          width:360px;
+        }
+
+
+        .statsHeader{
+          display:flex;
+          justify-content:space-between;
+        }
+
+
+        .label{
+          font-size:12px;
+          color:#9ca3af;
+        }
+
+
+        .date{
+          display:flex;
+          gap:10px;
+          margin-top:10px;
+        }
+
+
+        .date strong{
+          font-size:22px;
+        }
+
+
+        .thisMonth{
+          text-align:right;
+        }
+
+
+        .amount{
+          margin-top:12px;
+          font-weight:600;
+        }
+
+
+        .category{
+          margin-top:14px;
+          display:flex;
+          justify-content:space-between;
+        }
+
+
+
+        .right{
+          position:relative;
+        }
+
+
+        .illustration{
+          z-index:2;
+          position:relative;
+        }
+
+
+        .tyre{
+          position:absolute;
+          left:-100px;
+          bottom:-40px;
+        }
+
+
+        .featureCard{
+          position:absolute;
+          bottom:-20px;
+          right:-60px;
+          background:#2f3e46;
+          color:white;
+          padding:24px;
+          width:320px;
+          border-radius:6px;
+        }
+
+
+        .featureCard h3{
+          font-size:22px;
+          margin-bottom:8px;
+        }
+
+
+        .featureCard p{
+          font-size:14px;
+          color:#d1d5db;
+        }
+
+
+      `}</style>
+
+    </>
   );
 }
