@@ -15,15 +15,23 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
 
-  // Check if already logged in
   useEffect(() => {
     setMounted(true);
-    const token = localStorage.getItem("token");
-    const user = localStorage.getItem("user");
-    if (token && user) {
-      router.push("/dashboard");
-    }
-  }, [router]);
+    
+    // Log when component mounts
+    console.log('🔵 Login page mounted');
+    
+    const token = localStorage.getItem('token');
+    console.log('🔵 Token in localStorage:', token ? 'exists' : 'none');
+    
+    // Check cookie
+    const cookieToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('token='))
+      ?.split('=')[1];
+    console.log('🔵 Token in cookie:', cookieToken ? 'exists' : 'none');
+    
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +39,8 @@ export default function LoginPage() {
     setError("");
 
     try {
+      console.log('🔵 Login attempt with:', formData.email);
+      
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,28 +48,24 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
+      console.log('🔵 Login response:', data);
 
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Login failed");
       }
 
       if (data.data) {
-        // Store token in both cookie and localStorage for redundancy
+        console.log('🔵 Setting token...');
         document.cookie = `token=${data.data.token}; path=/; max-age=604800; samesite=lax`;
         localStorage.setItem("token", data.data.token);
         localStorage.setItem("user", JSON.stringify(data.data.user));
         
-        // Redirect to dashboard
+        console.log('🔵 Token set, redirecting to dashboard...');
         router.push("/dashboard");
-        
-        // Force a hard refresh to ensure auth state is updated
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 100);
       }
     } catch (err: any) {
+      console.error('🔵 Login error:', err);
       setError(err.message || "Invalid email or password");
-      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }

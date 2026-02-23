@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 const API_BASE_URL = "http://localhost:5000/api";
 
 export default function SignupPage() {
-  const { user } = useAuth();
+  const { user } = useAuth(); // Keep this, but don't auto-redirect
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -21,10 +21,11 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  if (user) {
-    router.replace("/dashboard");
-    return null;
-  }
+  // ❌ REMOVE THIS ENTIRE BLOCK
+  // if (user) {
+  //   router.replace("/dashboard");
+  //   return null;
+  // }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
