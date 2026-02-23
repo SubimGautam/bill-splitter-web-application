@@ -1,781 +1,691 @@
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  FaUserCircle, 
-  FaCamera, 
-  FaSave, 
-  FaArrowLeft,
-  FaEnvelope,
-  FaUser,
-  FaShieldAlt,
-  FaBell,
-  FaLock,
-  FaSignOutAlt
-} from 'react-icons/fa';
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  role: string;
-}
-
-interface ProfileData {
-  username: string;
-  email: string;
-  bio: string;
-  phone: string;
-  location: string;
-}
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  FiUser,
+  FiMail,
+  FiCamera,
+  FiHome,
+  FiUsers,
+  FiDollarSign,
+  FiBarChart2,
+  FiSettings,
+  FiLogOut,
+  FiShield,
+  FiCalendar,
+  FiLock,
+} from "react-icons/fi";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [profileData, setProfileData] = useState<ProfileData>({
-    username: '',
-    email: '',
-    bio: '',
-    phone: '',
-    location: ''
-  });
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
 
-  const API_BASE_URL = "http://localhost:5000/api";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
 
-  // Check authentication
+  const getToken = (): string | null => {
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(/(^| )token=([^;]+)/);
+    return match ? match[2] : null;
+  };
+
   useEffect(() => {
-    const checkAuth = () => {
-      const userStr = localStorage.getItem("user");
-      const hasToken = document.cookie.includes('token=');
-
-      if (!userStr || !hasToken) {
-        router.push("/authentication/login");
-        return;
-      }
-
+    const fetchUser = async () => {
       try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-        
-        // Set initial profile data
-        setProfileData({
-          username: userData.username || '',
-          email: userData.email || '',
-          bio: userData.bio || '',
-          phone: userData.phone || '',
-          location: userData.location || ''
+        const token = getToken();
+        if (!token) { router.push("/authentication/login"); return; }
+        const res = await fetch(`${API_BASE_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        
-        // Check if user has profile image in localStorage
-        const savedImage = localStorage.getItem('profileImage');
-        if (savedImage) {
-          setProfileImage(savedImage);
-        }
-        
-        setLoading(false);
+        const data = await res.json();
+        if (data.success) {
+          const userData = data.data;
+          setUser(userData);
+          if (userData.profileImage) {
+            const imgUrl = userData.profileImage.startsWith("http")
+              ? userData.profileImage
+              : `http://localhost:5000${userData.profileImage}`;
+            setProfileImage(imgUrl);
+          }
+        } else throw new Error(data.message);
       } catch (error) {
-        console.log("Error parsing user data, redirecting to login");
+        console.error("Failed to fetch user:", error);
         router.push("/authentication/login");
+      } finally {
+        setLoading(false);
       }
     };
+    fetchUser();
+  }, []);
 
-    checkAuth();
-  }, [router]);
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size should be less than 5MB');
-        return;
-      }
-
-      // Check file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please upload an image file');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setProfileImage(base64String);
-        // Save to localStorage temporarily
-        localStorage.setItem('profileImage', base64String);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setProfileData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSaveProfile = async () => {
-    if (!user) return;
-
-    setSaving(true);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setProfileImage(reader.result as string);
+    reader.readAsDataURL(file);
+    setUploading(true);
     try {
-      // Prepare data for API
-      const updateData = {
-        username: profileData.username,
-        email: profileData.email,
-        bio: profileData.bio,
-        phone: profileData.phone,
-        location: profileData.location,
-        profileImage: profileImage // Send base64 image
-      };
-
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('token='))
-        ?.split('=')[1];
-
-      const res = await fetch(`${API_BASE_URL}/users/update-profile`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(updateData),
+      const formData = new FormData();
+      formData.append("image", file);
+      const token = getToken();
+      const res = await fetch(`${API_BASE_URL}/users/upload-profile-image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
-
       const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to update profile");
+      if (data.success) {
+        let newUrl = data.data.profileImage;
+        if (newUrl && !newUrl.startsWith("http")) newUrl = `http://localhost:5000${newUrl}`;
+        setProfileImage(newUrl);
+        setUser((prev: any) => ({ ...prev, profileImage: newUrl }));
+      } else throw new Error(data.message);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Failed to upload image");
+      const token = getToken();
+      const res = await fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (data.success && data.data.profileImage) {
+        const imgUrl = data.data.profileImage.startsWith("http")
+          ? data.data.profileImage
+          : `http://localhost:5000${data.data.profileImage}`;
+        setProfileImage(imgUrl);
       }
-
-      // Update local storage with new user data
-      const updatedUser = {
-        ...user,
-        username: profileData.username,
-        email: profileData.email,
-        bio: profileData.bio,
-        phone: profileData.phone,
-        location: profileData.location
-      };
-      
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      setUser(updatedUser);
-
-      alert('Profile updated successfully!');
-      
-      // Update localStorage with profile image if exists
-      if (profileImage) {
-        localStorage.setItem('profileImage', profileImage);
-      }
-
-    } catch (error: any) {
-      console.error("Update error:", error);
-      alert(error.message || "Failed to update profile");
     } finally {
-      setSaving(false);
+      setUploading(false);
     }
   };
 
   const handleLogout = () => {
-    document.cookie = 'token=; path=/; max-age=0';
+    document.cookie = "token=; path=/; max-age=0";
     localStorage.removeItem("user");
-    localStorage.removeItem("profileImage");
     router.push("/authentication/login");
   };
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#f9fafb"
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{
-            width: "4rem",
-            height: "4rem",
-            border: "4px solid #10b981",
-            borderTopColor: "transparent",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-            margin: "0 auto"
-          }}></div>
-          <p style={{ marginTop: "1rem", color: "#6b7280" }}>Loading profile...</p>
-        </div>
+      <div style={styles.loadingContainer}>
+        <div style={styles.spinner} />
+        <p style={{ color: "#6b7280" }}>Loading profile...</p>
       </div>
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
+
+  const initials = user.username?.slice(0, 2).toUpperCase() || "??";
+
+  const navItems = [
+    { id: "dashboard", label: "Dashboard", icon: FiHome },
+    { id: "groups",    label: "Groups",    icon: FiUsers },
+    { id: "expenses",  label: "Expenses",  icon: FiDollarSign },
+    { id: "analytics", label: "Analytics", icon: FiBarChart2 },
+    { id: "settings",  label: "Settings",  icon: FiSettings },
+  ] as const;
 
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      backgroundColor: "#f9fafb"
-    }}>
-      <style jsx global>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        
-        @media (min-width: 768px) {
-          .profile-container {
-            max-width: 42rem !important;
-          }
-        }
-        
-        @media (min-width: 1024px) {
-          .profile-grid {
-            grid-template-columns: 1fr 2fr !important;
-          }
-        }
-      `}</style>
-      
-      {/* Navigation */}
-      <div style={{
-        backgroundColor: "white",
-        padding: "1rem 1.5rem",
-        marginBottom: "2rem",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-      }}>
-        <div style={{ maxWidth: "1280px", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <button 
-              onClick={() => router.push("/dashboard")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                background: "none",
-                border: "none",
-                color: "#6b7280",
-                cursor: "pointer",
-                fontSize: "0.875rem"
-              }}
-            >
-              <FaArrowLeft /> Back to Dashboard
+    <div style={styles.container}>
+      {/* ── Sidebar (identical to dashboard) ── */}
+      <div style={styles.sidebar}>
+        <div style={styles.logo}>💰 Splito</div>
+        <nav style={styles.nav}>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                onClick={() => router.push("/dashboard")}
+                style={{ ...styles.navItem, backgroundColor: "transparent", color: "#4b5563" }}
+              >
+                <Icon size={20} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* ── Main ── */}
+      <div style={styles.main}>
+        {/* Header */}
+        <header style={styles.header}>
+          <h1 style={styles.pageTitle}>Profile</h1>
+          <div style={styles.userSection}>
+            <div style={styles.userInfo}>
+              <FiUser size={18} color="#10b981" />
+              <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#111827" }}>
+                {user.username}
+              </span>
+            </div>
+            <button onClick={handleLogout} style={styles.logoutButton} title="Logout">
+              <FiLogOut size={20} />
             </button>
           </div>
-          
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <div style={{ 
-              display: "flex", 
-              alignItems: "center", 
-              gap: "0.5rem",
-              padding: "0.5rem 1rem",
-              backgroundColor: "#f3f4f6",
-              borderRadius: "0.5rem"
-            }}>
-              <FaUserCircle style={{ color: "#10b981" }} />
-              <span style={{ fontWeight: 500 }}>{user.username}</span>
+        </header>
+
+        {/* Two-column layout */}
+        <div style={styles.contentGrid}>
+          {/* Left — avatar + quick info */}
+          <div style={styles.leftCol}>
+            <div style={styles.card}>
+              {/* Avatar */}
+              <div style={styles.avatarCenter}>
+                <div style={styles.avatarWrap}>
+                  {profileImage ? (
+                    <img src={profileImage} alt={user.username} style={styles.avatarImg} />
+                  ) : (
+                    <div style={styles.avatarInitials}>{initials}</div>
+                  )}
+                  <label htmlFor="image-upload" style={styles.cameraBtn} title="Change photo">
+                    {uploading
+                      ? <span style={styles.uploadSpinner} />
+                      : <FiCamera size={13} />}
+                  </label>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ display: "none" }}
+                    disabled={uploading}
+                  />
+                </div>
+
+                <h2 style={styles.avatarName}>{user.username}</h2>
+
+                <span style={styles.roleBadge}>
+                  <FiShield size={11} />
+                  {user.role || "User"}
+                </span>
+              </div>
+
+              <div style={styles.divider} />
+
+              {/* Info list */}
+              <div style={styles.infoList}>
+                {[
+                  { icon: <FiMail size={14} color="#10b981" />, label: "Email", value: user.email },
+                  { icon: <FiCalendar size={14} color="#10b981" />, label: "Member Since", value: "January 2025" },
+                  { icon: <FiShield size={14} color="#10b981" />, label: "Status", value: "● Active", green: true },
+                ].map((row) => (
+                  <div key={row.label} style={styles.infoRow}>
+                    <span style={styles.infoIconWrap}>{row.icon}</span>
+                    <div>
+                      <p style={styles.infoLabel}>{row.label}</p>
+                      <p style={row.green ? { ...styles.infoValue, color: "#10b981", fontWeight: 600 } : styles.infoValue}>
+                        {row.value}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right — details + actions + danger */}
+          <div style={styles.rightCol}>
+            {/* Profile details */}
+            <div style={styles.card}>
+              <div style={styles.cardHeader}>
+                <h3 style={styles.cardTitle}>Profile Information</h3>
+                <span style={styles.readOnlyTag}>Read-only</span>
+              </div>
+              <div style={styles.fieldsGrid}>
+                <div style={styles.fieldItem}>
+                  <label style={styles.fieldLabel}>Username</label>
+                  <div style={styles.fieldValue}>
+                    <FiUser size={15} color="#10b981" />
+                    <span style={styles.fieldText}>{user.username}</span>
+                  </div>
+                </div>
+                <div style={styles.fieldItem}>
+                  <label style={styles.fieldLabel}>Role</label>
+                  <div style={styles.fieldValue}>
+                    <FiShield size={15} color="#10b981" />
+                    <span style={{ ...styles.fieldText, textTransform: "capitalize" }}>{user.role || "user"}</span>
+                  </div>
+                </div>
+                <div style={{ ...styles.fieldItem, gridColumn: "1 / -1" }}>
+                  <label style={styles.fieldLabel}>Email Address</label>
+                  <div style={styles.fieldValue}>
+                    <FiMail size={15} color="#10b981" />
+                    <span style={styles.fieldText}>{user.email}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Account actions */}
+            <div style={styles.card}>
+              <div style={styles.cardHeader}>
+                <h3 style={styles.cardTitle}>Account Actions</h3>
+              </div>
+              <button
+                style={styles.actionRow}
+                onClick={() => router.push("/change-password")}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#f9fafb")}
+              >
+                <span style={styles.actionIconWrapBlue}>
+                  <FiLock size={16} color="#0369a1" />
+                </span>
+                <div style={{ flex: 1, textAlign: "left" }}>
+                  <p style={styles.actionTitle}>Change Password</p>
+                  <p style={styles.actionSub}>Update your login credentials</p>
+                </div>
+                <span style={{ color: "#9ca3af" }}>→</span>
+              </button>
+            </div>
+
+            {/* Danger zone */}
+            <div style={styles.dangerCard}>
+              <h3 style={styles.dangerTitle}>Danger Zone</h3>
+              <p style={styles.dangerSub}>Permanent actions — cannot be reversed.</p>
+              <div style={styles.dangerBtns}>
+                <button style={styles.logoutDangerBtn} onClick={handleLogout}>
+                  <FiLogOut size={15} /> Logout
+                </button>
+                <button
+                  style={styles.deleteBtn}
+                  onClick={() => {
+                    if (confirm("Are you sure you want to delete your account? This cannot be undone.")) {
+                      alert("Account deletion would be processed here");
+                    }
+                  }}
+                >
+                  Delete Account
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Main Content */}
-      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 1rem" }}>
-        <div style={{ marginBottom: "2rem" }}>
-          <h1 style={{ 
-            fontSize: "2rem", 
-            fontWeight: "bold", 
-            color: "#111827",
-            marginBottom: "0.5rem"
-          }}>
-            Profile Settings
-          </h1>
-          <p style={{ color: "#6b7280" }}>
-            Manage your account settings and profile information
-          </p>
-        </div>
-
-        <div style={{
-          maxWidth: "48rem",
-          margin: "0 auto"
-        }} className="profile-container">
-          {/* Profile Card */}
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: "0.75rem",
-            padding: "2rem",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            marginBottom: "2rem"
-          }}>
-            <div style={{ 
-              display: "flex", 
-              flexDirection: "column",
-              alignItems: "center",
-              marginBottom: "2rem"
-            }}>
-              {/* Profile Image Upload */}
-              <div style={{ position: "relative", marginBottom: "1rem" }}>
-                <div style={{
-                  width: "8rem",
-                  height: "8rem",
-                  borderRadius: "50%",
-                  backgroundColor: "#f3f4f6",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  border: "4px solid white",
-                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
-                }}>
-                  {profileImage ? (
-                    <img 
-                      src={profileImage} 
-                      alt="Profile" 
-                      style={{ 
-                        width: "100%", 
-                        height: "100%", 
-                        objectFit: "cover" 
-                      }} 
-                    />
-                  ) : (
-                    <FaUserCircle style={{ fontSize: "5rem", color: "#9ca3af" }} />
-                  )}
-                </div>
-                
-                <button
-                  onClick={triggerFileInput}
-                  style={{
-                    position: "absolute",
-                    bottom: "0",
-                    right: "0",
-                    backgroundColor: "#10b981",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: "2.5rem",
-                    height: "2.5rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                  }}
-                >
-                  <FaCamera />
-                </button>
-                
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                  style={{ display: "none" }}
-                />
-              </div>
-
-              <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#111827" }}>
-                {profileData.username}
-              </h2>
-              <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>
-                {user.role} • Member since {new Date().getFullYear()}
-              </p>
-            </div>
-
-            {/* Profile Form */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr",
-                gap: "1.5rem"
-              }} className="profile-grid">
-                {/* Left Column - Personal Info */}
-                <div>
-                  <h3 style={{ 
-                    fontSize: "1.125rem", 
-                    fontWeight: "bold", 
-                    color: "#111827",
-                    marginBottom: "1rem",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem"
-                  }}>
-                    <FaUser /> Personal Information
-                  </h3>
-                  
-                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                    <div>
-                      <label style={{ 
-                        display: "block", 
-                        fontSize: "0.875rem", 
-                        fontWeight: 500, 
-                        color: "#374151",
-                        marginBottom: "0.25rem"
-                      }}>
-                        Username
-                      </label>
-                      <input
-                        type="text"
-                        name="username"
-                        value={profileData.username}
-                        onChange={handleInputChange}
-                        style={{
-                          width: "100%",
-                          padding: "0.5rem 0.75rem",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "0.375rem",
-                          fontSize: "0.875rem"
-                        }}
-                        placeholder="Enter your username"
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ 
-                        display: "block", 
-                        fontSize: "0.875rem", 
-                        fontWeight: 500, 
-                        color: "#374151",
-                        marginBottom: "0.25rem"
-                      }}>
-                        Email Address
-                      </label>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                        <FaEnvelope style={{ color: "#6b7280" }} />
-                        <input
-                          type="email"
-                          name="email"
-                          value={profileData.email}
-                          onChange={handleInputChange}
-                          style={{
-                            width: "100%",
-                            padding: "0.5rem 0.75rem",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "0.375rem",
-                            fontSize: "0.875rem"
-                          }}
-                          placeholder="Enter your email"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={{ 
-                        display: "block", 
-                        fontSize: "0.875rem", 
-                        fontWeight: 500, 
-                        color: "#374151",
-                        marginBottom: "0.25rem"
-                      }}>
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={profileData.phone}
-                        onChange={handleInputChange}
-                        style={{
-                          width: "100%",
-                          padding: "0.5rem 0.75rem",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "0.375rem",
-                          fontSize: "0.875rem"
-                        }}
-                        placeholder="Enter your phone number"
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ 
-                        display: "block", 
-                        fontSize: "0.875rem", 
-                        fontWeight: 500, 
-                        color: "#374151",
-                        marginBottom: "0.25rem"
-                      }}>
-                        Location
-                      </label>
-                      <input
-                        type="text"
-                        name="location"
-                        value={profileData.location}
-                        onChange={handleInputChange}
-                        style={{
-                          width: "100%",
-                          padding: "0.5rem 0.75rem",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "0.375rem",
-                          fontSize: "0.875rem"
-                        }}
-                        placeholder="Enter your location"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column - Bio */}
-                <div>
-                  <h3 style={{ 
-                    fontSize: "1.125rem", 
-                    fontWeight: "bold", 
-                    color: "#111827",
-                    marginBottom: "1rem"
-                  }}>
-                    About Me
-                  </h3>
-                  
-                  <div>
-                    <label style={{ 
-                      display: "block", 
-                      fontSize: "0.875rem", 
-                      fontWeight: 500, 
-                      color: "#374151",
-                      marginBottom: "0.25rem"
-                    }}>
-                      Bio
-                    </label>
-                    <textarea
-                      name="bio"
-                      value={profileData.bio}
-                      onChange={handleInputChange}
-                      rows={6}
-                      style={{
-                        width: "100%",
-                        padding: "0.75rem",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "0.375rem",
-                        fontSize: "0.875rem",
-                        resize: "vertical",
-                        minHeight: "8rem"
-                      }}
-                      placeholder="Tell us a little about yourself..."
-                      maxLength={500}
-                    />
-                    <p style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: "0.25rem" }}>
-                      {profileData.bio.length}/500 characters
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ 
-                display: "flex", 
-                justifyContent: "flex-end", 
-                gap: "1rem",
-                paddingTop: "1.5rem",
-                borderTop: "1px solid #e5e7eb"
-              }}>
-                <button
-                  onClick={() => router.push("/dashboard")}
-                  style={{
-                    padding: "0.5rem 1.5rem",
-                    backgroundColor: "transparent",
-                    color: "#6b7280",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "0.375rem",
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
-                    cursor: "pointer"
-                  }}
-                >
-                  Cancel
-                </button>
-                
-                <button
-                  onClick={handleSaveProfile}
-                  disabled={saving}
-                  style={{
-                    padding: "0.5rem 1.5rem",
-                    backgroundColor: saving ? "#9ca3af" : "#10b981",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "0.375rem",
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
-                    cursor: saving ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem"
-                  }}
-                >
-                  {saving ? (
-                    <>
-                      <div style={{
-                        width: "1rem",
-                        height: "1rem",
-                        border: "2px solid white",
-                        borderTopColor: "transparent",
-                        borderRadius: "50%",
-                        animation: "spin 1s linear infinite"
-                      }}></div>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <FaSave /> Save Changes
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Settings Cards */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "1fr",
-            gap: "1.5rem"
-          }}>
-            {/* Account Settings */}
-            <div style={{
-              backgroundColor: "white",
-              borderRadius: "0.75rem",
-              padding: "1.5rem",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-            }}>
-              <h3 style={{ 
-                fontSize: "1.125rem", 
-                fontWeight: "bold", 
-                color: "#111827",
-                marginBottom: "1rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem"
-              }}>
-                <FaShieldAlt /> Account Settings
-              </h3>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <button
-                  onClick={() => router.push("/change-password")}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "0.75rem",
-                    backgroundColor: "#f9fafb",
-                    border: "none",
-                    borderRadius: "0.5rem",
-                    cursor: "pointer",
-                    transition: "background-color 0.2s"
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#f9fafb"}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <FaLock style={{ color: "#6b7280" }} />
-                    <div style={{ textAlign: "left" }}>
-                      <p style={{ fontWeight: 500, color: "#111827" }}>Change Password</p>
-                      <p style={{ fontSize: "0.75rem", color: "#6b7280" }}>Update your password regularly</p>
-                    </div>
-                  </div>
-                  <span style={{ color: "#6b7280" }}>→</span>
-                </button>
-
-                <button
-                  onClick={() => router.push("/notification-settings")}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "0.75rem",
-                    backgroundColor: "#f9fafb",
-                    border: "none",
-                    borderRadius: "0.5rem",
-                    cursor: "pointer",
-                    transition: "background-color 0.2s"
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#f9fafb"}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <FaBell style={{ color: "#6b7280" }} />
-                    <div style={{ textAlign: "left" }}>
-                      <p style={{ fontWeight: 500, color: "#111827" }}>Notification Settings</p>
-                      <p style={{ fontSize: "0.75rem", color: "#6b7280" }}>Manage your notification preferences</p>
-                    </div>
-                  </div>
-                  <span style={{ color: "#6b7280" }}>→</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Danger Zone */}
-            <div style={{
-              backgroundColor: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: "0.75rem",
-              padding: "1.5rem"
-            }}>
-              <h3 style={{ 
-                fontSize: "1.125rem", 
-                fontWeight: "bold", 
-                color: "#991b1b",
-                marginBottom: "1rem"
-              }}>
-                Danger Zone
-              </h3>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <p style={{ fontSize: "0.875rem", color: "#7f1d1d" }}>
-                  Once you delete your account, there is no going back. Please be certain.
-                </p>
-                
-                <div style={{ display: "flex", gap: "1rem" }}>
-                  <button 
-                    onClick={handleLogout}
-                    style={{
-                      padding: "0.5rem 1.5rem",
-                      backgroundColor: "#fee2e2",
-                      color: "#dc2626",
-                      border: "1px solid #fecaca",
-                      borderRadius: "0.375rem",
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem"
-                    }}
-                  >
-                    <FaSignOutAlt /> Logout
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-                        alert("Account deletion would be processed here");
-                      }
-                    }}
-                    style={{
-                      padding: "0.5rem 1.5rem",
-                      backgroundColor: "#dc2626",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "0.375rem",
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                      cursor: "pointer"
-                    }}
-                  >
-                    Delete Account
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> 
     </div>
   );
 }
+
+const styles: { [key: string]: React.CSSProperties } = {
+  loadingContainer: {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f9fafb",
+    gap: "1rem",
+  },
+  spinner: {
+    width: "3rem",
+    height: "3rem",
+    border: "4px solid #e5e7eb",
+    borderTopColor: "#10b981",
+    borderRadius: "50%",
+    animation: "spin 1s linear infinite",
+  },
+
+  // Layout
+  container: {
+    display: "flex",
+    minHeight: "100vh",
+    backgroundColor: "#f9fafb",
+  },
+
+  // Sidebar — pixel-for-pixel match with dashboard
+  sidebar: {
+    width: "260px",
+    backgroundColor: "white",
+    borderRight: "1px solid #e5e7eb",
+    padding: "2rem 1rem",
+    flexShrink: 0,
+  },
+  logo: {
+    fontSize: "1.5rem",
+    fontWeight: "bold",
+    color: "#10b981",
+    marginBottom: "2rem",
+    paddingLeft: "1rem",
+  },
+  nav: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  navItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    padding: "0.75rem 1rem",
+    border: "none",
+    borderRadius: "0.5rem",
+    fontSize: "0.95rem",
+    cursor: "pointer",
+    width: "100%",
+    textAlign: "left",
+    transition: "all 0.2s",
+    fontFamily: "inherit",
+  },
+
+  // Main
+  main: {
+    flex: 1,
+    padding: "2rem",
+    overflowY: "auto",
+  },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "2rem",
+  },
+  pageTitle: {
+    fontSize: "2rem",
+    fontWeight: "bold",
+    color: "#111827",
+  },
+  userSection: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+  },
+  userInfo: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    padding: "0.5rem 1rem",
+    backgroundColor: "white",
+    borderRadius: "2rem",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+  },
+  logoutButton: {
+    padding: "0.5rem",
+    backgroundColor: "#fee2e2",
+    color: "#dc2626",
+    border: "none",
+    borderRadius: "50%",
+    width: "2.5rem",
+    height: "2.5rem",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+  },
+
+  // Content grid
+  contentGrid: {
+    display: "grid",
+    gridTemplateColumns: "280px 1fr",
+    gap: "1.5rem",
+    alignItems: "start",
+  },
+  leftCol: {},
+  rightCol: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+  },
+
+  // Card (matches dashboard's statCard / chartCard style)
+  card: {
+    backgroundColor: "white",
+    borderRadius: "1rem",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    padding: "1.5rem",
+  },
+  cardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "1.25rem",
+  },
+  cardTitle: {
+    fontSize: "1rem",
+    fontWeight: 600,
+    color: "#111827",
+  },
+  readOnlyTag: {
+    fontSize: "0.7rem",
+    color: "#9ca3af",
+    backgroundColor: "#f3f4f6",
+    border: "1px solid #e5e7eb",
+    borderRadius: "6px",
+    padding: "2px 8px",
+  },
+
+  // Avatar
+  avatarCenter: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    textAlign: "center",
+    marginBottom: "0",
+  },
+  avatarWrap: {
+    position: "relative",
+    marginBottom: "1rem",
+  },
+  avatarImg: {
+    width: "88px",
+    height: "88px",
+    borderRadius: "50%",
+    objectFit: "cover",
+    border: "3px solid #d1fae5",
+  },
+  avatarInitials: {
+    width: "88px",
+    height: "88px",
+    borderRadius: "50%",
+    backgroundColor: "#10b981",
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "1.75rem",
+    fontWeight: "bold",
+    border: "3px solid #d1fae5",
+  },
+  cameraBtn: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: "26px",
+    height: "26px",
+    borderRadius: "50%",
+    backgroundColor: "#10b981",
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    border: "2px solid white",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+  },
+  uploadSpinner: {
+    width: "11px",
+    height: "11px",
+    borderRadius: "50%",
+    border: "2px solid rgba(255,255,255,0.35)",
+    borderTopColor: "white",
+    display: "inline-block",
+    animation: "spin 0.7s linear infinite",
+  },
+  avatarName: {
+    fontSize: "1.125rem",
+    fontWeight: 700,
+    color: "#111827",
+    marginBottom: "0.4rem",
+  },
+  roleBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    backgroundColor: "#f0fdf4",
+    color: "#10b981",
+    border: "1px solid #bbf7d0",
+    borderRadius: "999px",
+    padding: "3px 12px",
+    fontSize: "0.75rem",
+    fontWeight: 500,
+    textTransform: "capitalize",
+    marginBottom: "1rem",
+  },
+  divider: {
+    width: "100%",
+    height: "1px",
+    backgroundColor: "#f3f4f6",
+    margin: "1rem 0",
+  },
+  infoList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.875rem",
+  },
+  infoRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "0.75rem",
+  },
+  infoIconWrap: {
+    width: "30px",
+    height: "30px",
+    backgroundColor: "#f0fdf4",
+    border: "1px solid #bbf7d0",
+    borderRadius: "8px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  infoLabel: {
+    fontSize: "0.65rem",
+    color: "#9ca3af",
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    marginBottom: "2px",
+  },
+  infoValue: {
+    fontSize: "0.8rem",
+    color: "#111827",
+    fontWeight: 500,
+    wordBreak: "break-all",
+  },
+
+  // Fields
+  fieldsGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "1rem",
+  },
+  fieldItem: {},
+  fieldLabel: {
+    display: "block",
+    fontSize: "0.7rem",
+    color: "#9ca3af",
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    marginBottom: "6px",
+    fontWeight: 500,
+  },
+  fieldValue: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    backgroundColor: "#f9fafb",
+    border: "1px solid #e5e7eb",
+    borderRadius: "0.5rem",
+    padding: "10px 14px",
+  },
+  fieldText: {
+    fontSize: "0.875rem",
+    color: "#111827",
+    fontWeight: 500,
+  },
+
+  // Action row
+  actionRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    backgroundColor: "#f9fafb",
+    border: "1px solid #e5e7eb",
+    borderRadius: "0.75rem",
+    padding: "14px 16px",
+    cursor: "pointer",
+    width: "100%",
+    fontFamily: "inherit",
+    transition: "background-color 0.15s",
+  },
+  actionIconWrapBlue: {
+    width: "36px",
+    height: "36px",
+    backgroundColor: "#e0f2fe",
+    borderRadius: "9px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  actionTitle: {
+    fontSize: "0.875rem",
+    fontWeight: 600,
+    color: "#111827",
+    marginBottom: "2px",
+  },
+  actionSub: {
+    fontSize: "0.75rem",
+    color: "#6b7280",
+  },
+
+  // Danger zone
+  dangerCard: {
+    backgroundColor: "#fff5f5",
+    border: "1px solid #fecaca",
+    borderRadius: "1rem",
+    padding: "1.5rem",
+  },
+  dangerTitle: {
+    fontSize: "1rem",
+    fontWeight: 600,
+    color: "#dc2626",
+    marginBottom: "0.3rem",
+  },
+  dangerSub: {
+    fontSize: "0.8rem",
+    color: "#ef4444",
+    marginBottom: "1.1rem",
+  },
+  dangerBtns: {
+    display: "flex",
+    gap: "0.75rem",
+    flexWrap: "wrap",
+  },
+  logoutDangerBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "0.55rem 1.1rem",
+    backgroundColor: "white",
+    color: "#dc2626",
+    border: "1px solid #fca5a5",
+    borderRadius: "0.5rem",
+    fontSize: "0.875rem",
+    fontWeight: 500,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  deleteBtn: {
+    padding: "0.55rem 1.1rem",
+    backgroundColor: "#dc2626",
+    color: "white",
+    border: "none",
+    borderRadius: "0.5rem",
+    fontSize: "0.875rem",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+};

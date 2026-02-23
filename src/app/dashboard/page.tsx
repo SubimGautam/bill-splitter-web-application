@@ -289,14 +289,18 @@ export default function DashboardPage() {
             {navItems.find((i) => i.id === activeTab)?.label || "Dashboard"}
           </h1>
           <div style={styles.userSection}>
-            <div style={styles.userInfo}>
-              <FiUser size={20} />
-              <span>{user?.username || "User"}</span>
-            </div>
-            <button onClick={handleLogout} style={styles.logoutButton} title="Logout">
-              <FiLogOut size={20} />
-            </button>
-          </div>
+            
+  <button
+    onClick={() => router.push("/profile")}
+    style={styles.profileButton}
+  >
+    <FiUser size={20} />
+    <span>{user?.username || "User"}</span>
+  </button>
+  <button onClick={handleLogout} style={styles.logoutButton} title="Logout">
+    <FiLogOut size={20} />
+  </button>
+</div>
         </header>
 
         {/* Render content based on active tab */}
@@ -605,7 +609,25 @@ export default function DashboardPage() {
                 <span>Member since</span>
                 <strong>{new Date().toLocaleDateString()}</strong>
               </div>
-              <div style={{ marginTop: "1.5rem" }}>
+              <div style={{ marginTop: "1.5rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <button
+                  onClick={() => router.push("/profile")}
+                  style={{
+                    padding: "0.75rem 1.5rem",
+                    backgroundColor: "#10b981",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "0.5rem",
+                    fontSize: "0.875rem",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <FiUser size={18} /> Edit Profile
+                </button>
                 <button
                   onClick={handleLogout}
                   style={{
@@ -618,6 +640,7 @@ export default function DashboardPage() {
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     gap: "0.5rem",
                   }}
                 >

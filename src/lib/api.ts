@@ -87,7 +87,7 @@ export const api = {
   // Dashboard
   getDashboard: () => fetchWithAuth<DashboardData>("/dashboard"),
 
-  getGroupWithBalances: (groupId: string) =>
+ getGroupWithBalances: (groupId: string) => 
   fetchWithAuth<any>(`/groups/${groupId}/balances`),
 
   createSettlement: (data: { from: string; to: string; amount: number; groupId: string }) =>
@@ -95,6 +95,8 @@ export const api = {
     method: "POST",
     body: JSON.stringify(data),
   }),
+
+  
 
   getGroupSettlements: (groupId: string) =>
   fetchWithAuth<any[]>(`/settlements/group/${groupId}`),
@@ -117,17 +119,19 @@ export const api = {
 
   // Expenses
   getGroupExpenses: (groupId: string) => fetchWithAuth<Expense[]>(`/expenses/group/${groupId}`),
-  createExpense: (data: {
+    createExpense: (data: {
     description: string;
     amount: number;
     paidBy: string;
     groupId: string;
-    participants: { name: string; amount: number }[];
-  }) =>
-    fetchWithAuth<Expense>("/expenses", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  }) => fetchWithAuth("/expenses", { method: "POST", body: JSON.stringify(data) }),
   deleteExpense: (expenseId: string) =>
     fetchWithAuth<{ message: string }>(`/expenses/${expenseId}`, { method: "DELETE" }),
+    createDetailedExpense: (data: {
+    description: string;
+    totalAmount: number;
+    payments: { name: string; amount: number }[];
+    splits: { name: string; amount: number }[];
+    groupId: string;
+  }) => fetchWithAuth("/expenses", { method: "POST", body: JSON.stringify(data) }),
 };

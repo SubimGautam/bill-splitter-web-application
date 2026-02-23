@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { FiArrowLeft, FiUsers, FiDollarSign, FiCheckCircle, FiPlus, FiUserPlus } from "react-icons/fi";
+import { FiArrowLeft, FiUsers, FiDollarSign, FiCheckCircle, FiPlus, FiUserPlus, FiRefreshCw } from "react-icons/fi";
 
 interface GroupDetail {
   group: {
@@ -43,22 +43,34 @@ export default function GroupDetailPage() {
   const [settlementTo, setSettlementTo] = useState("");
   const [settlementAmount, setSettlementAmount] = useState("");
 
-  useEffect(() => {
-    if (id) loadData();
-  }, [id]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
+      setError("");
+      console.log("📡 Fetching group balances for ID:", id);
+      
       const data = await api.getGroupWithBalances(id);
-      setGroupDetail(data);
+      console.log("✅ Received data:", data);
+      
+      const formattedData: GroupDetail = {
+        group: data.group,
+        expenses: data.expenses || [],
+        settlements: data.settlements || [],
+        balances: data.balances || []
+      };
+      
+      setGroupDetail(formattedData);
     } catch (err: any) {
-      console.error("Failed to load group data", err);
+      console.error("❌ Failed to load group data", err);
       setError(err.message || "Failed to load group data");
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) loadData();
+  }, [id, loadData]);
 
   const addMember = async () => {
     if (!newMemberName.trim() || !groupDetail) return;
@@ -95,7 +107,7 @@ export default function GroupDetailPage() {
       alert("Invalid amount");
       return;
     }
-    const totalPayments = payments.reduce((sum, p) => sum + p.amount, 0);
+    const totalPayments = payments.reduce((sum: number, p) => sum + p.amount, 0);
     if (Math.abs(totalPayments - total) > 0.01) {
       alert(`Total payments (${totalPayments}) must equal total amount (${total})`);
       return;
@@ -105,8 +117,8 @@ export default function GroupDetailPage() {
     const equalShare = total / memberCount;
     const splitsForBackend = groupDetail.group.members.map((name, index) => {
       if (index === memberCount - 1) {
-        const previousSum = Array.from({ length: memberCount - 1 }).reduce(
-          (sum, _, i) => sum + (Math.floor(equalShare * 100) / 100),
+        const previousSum = Array.from({ length: memberCount - 1 }).reduce<number>(
+          (acc) => acc + (Math.floor(equalShare * 100) / 100),
           0
         );
         const lastAmount = Number((total - previousSum).toFixed(2));
@@ -146,32 +158,44 @@ export default function GroupDetailPage() {
       alert("Invalid amount");
       return;
     }
+
+    const from = settlementFrom;
+    const to = settlementTo;
+    const amt = amount;
+
+    setShowSettleModal(false);
+    setSettlementFrom("");
+    setSettlementTo("");
+    setSettlementAmount("");
+    setLoading(true);
+
     try {
-      await api.createSettlement({
-        from: settlementFrom,
-        to: settlementTo,
-        amount,
-        groupId: id,
-      });
-      setShowSettleModal(false);
-      setSettlementFrom("");
-      setSettlementTo("");
-      setSettlementAmount("");
-      loadData();
+      console.log("💰 Creating settlement:", { from, to, amt, groupId: id });
+      await api.createSettlement({ from, to, amount: amt, groupId: id });
+      await loadData();
+      console.log("✅ Settlement created, data reloaded");
     } catch (err) {
-      console.error("Failed to record settlement", err);
+      console.error("❌ Settlement failed:", err);
       alert("Failed to record settlement");
+      await loadData();
+    } finally {
+      setLoading(false);
     }
   };
 
+  const manualRefresh = () => {
+    console.log("🔄 Manual refresh triggered");
+    loadData();
+  };
+
   const getSuggestedSettlements = () => {
-    if (!groupDetail) return [];
+    if (!groupDetail || !Array.isArray(groupDetail.balances)) return [];
     const debtors = groupDetail.balances
-      .filter(b => b.amount < -0.01)
+      .filter(b => b && b.amount < -0.01)
       .map(b => ({ ...b, amount: Math.abs(b.amount) }))
       .sort((a, b) => b.amount - a.amount);
     const creditors = groupDetail.balances
-      .filter(b => b.amount > 0.01)
+      .filter(b => b && b.amount > 0.01)
       .sort((a, b) => b.amount - a.amount);
     if (debtors.length === 0 || creditors.length === 0) return [];
     const suggestions = [];
@@ -217,9 +241,10 @@ export default function GroupDetailPage() {
 
   if (error || !groupDetail) {
     return (
-      <div style={styles.loadingContainer}>
+      <div style={styles.errorContainer}>
         <p style={{ color: "#ef4444" }}>{error || "Group not found"}</p>
         <button onClick={() => router.back()} style={styles.backButton}>Go Back</button>
+        <button onClick={manualRefresh} style={styles.retryButton}>Retry</button>
       </div>
     );
   }
@@ -240,6 +265,7 @@ export default function GroupDetailPage() {
   }).filter(d => d.value > 0);
 
   const balanceChartData = balances.map(b => ({ name: b.name, amount: b.amount }));
+  const unsettledCount = balances.filter(b => Math.abs(b.amount) > 0.01).length;
 
   return (
     <div style={styles.container}>
@@ -249,6 +275,9 @@ export default function GroupDetailPage() {
           <FiArrowLeft style={{ marginRight: "0.5rem" }} /> Back to Dashboard
         </button>
         <div style={styles.headerRight}>
+          <button onClick={manualRefresh} style={styles.refreshButton} title="Refresh">
+            <FiRefreshCw />
+          </button>
           <button onClick={openExpenseModal} style={styles.primaryButton}>
             <FiDollarSign /> Add Expense
           </button>
@@ -275,12 +304,12 @@ export default function GroupDetailPage() {
           </p>
         </div>
         <div style={styles.statCard}>
-          <p style={styles.statLabel}>Pending Settlements</p>
+          <p style={styles.statLabel}>Settlements</p>
           <p style={styles.statValue}>{settlements.length}</p>
         </div>
         <div style={styles.statCard}>
           <p style={styles.statLabel}>Unsettled Balances</p>
-          <p style={styles.statValue}>{balances.filter(b => b.amount !== 0).length}</p>
+          <p style={styles.statValue}>{unsettledCount}</p>
         </div>
       </div>
 
@@ -329,11 +358,11 @@ export default function GroupDetailPage() {
         )}
       </div>
 
-      {/* Main content: two columns */}
+      {/* Two columns */}
       <div style={styles.twoColumn}>
-        {/* Left column: Balances & Members */}
+        {/* Left column */}
         <div style={styles.leftColumn}>
-          {/* Balances card */}
+          {/* Balances */}
           <div style={styles.card}>
             <div style={styles.cardHeader}>
               <h3 style={styles.cardTitle}>Balances</h3>
@@ -357,14 +386,12 @@ export default function GroupDetailPage() {
                 ))
               )}
             </div>
-
-            {/* Suggested settlements */}
             {suggestedSettlements.length > 0 && (
               <div style={styles.suggestionBox}>
                 <p style={styles.suggestionTitle}>💡 Suggested settlements</p>
                 {suggestedSettlements.map((s, idx) => (
                   <div key={idx} style={styles.suggestionItem}>
-                    <span>{s.from} → {s.to}</span>
+                    <span><strong>{s.from}</strong> owes <strong>{s.to}</strong></span>
                     <span style={styles.suggestionAmount}>Rs {s.amount.toFixed(2)}</span>
                   </div>
                 ))}
@@ -372,7 +399,7 @@ export default function GroupDetailPage() {
             )}
           </div>
 
-          {/* Members card */}
+          {/* Members */}
           <div style={styles.card}>
             <div style={styles.cardHeader}>
               <h3 style={styles.cardTitle}>Members</h3>
@@ -380,9 +407,7 @@ export default function GroupDetailPage() {
             <div style={styles.memberList}>
               {group.members.map((name, i) => (
                 <div key={i} style={styles.memberItem}>
-                  <div style={styles.memberAvatar}>
-                    {name.charAt(0).toUpperCase()}
-                  </div>
+                  <div style={styles.memberAvatar}>{name.charAt(0).toUpperCase()}</div>
                   <span style={styles.memberName}>{name}</span>
                 </div>
               ))}
@@ -402,14 +427,15 @@ export default function GroupDetailPage() {
           </div>
         </div>
 
-        {/* Right column: Expenses */}
+        {/* Right column */}
         <div style={styles.rightColumn}>
+          {/* Expenses */}
           <div style={styles.card}>
             <div style={styles.cardHeader}>
               <h3 style={styles.cardTitle}>Expenses</h3>
             </div>
             {expenses.length === 0 ? (
-              <p style={styles.emptyText}>No expenses yet. Add your first expense!</p>
+              <p style={styles.emptyText}>No expenses yet.</p>
             ) : (
               <div style={styles.expenseList}>
                 {expenses.map((exp) => {
@@ -431,7 +457,11 @@ export default function GroupDetailPage() {
                         <div>
                           <p style={styles.expenseDesc}>{exp.description}</p>
                           <p style={styles.expenseDate}>
-                            {new Date(exp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            {new Date(exp.date).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric' 
+                            })}
                           </p>
                         </div>
                         <p style={styles.expenseTotal}>Rs {exp.totalAmount.toFixed(2)}</p>
@@ -449,16 +479,19 @@ export default function GroupDetailPage() {
                         </div>
                       </div>
 
-                      {/* Net result */}
+                      {/* Who owes whom - Settlement preview for this expense */}
                       {overpayers.length > 0 && underpayers.length > 0 && (
                         <div style={styles.settlementPreview}>
+                          <p style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.25rem', color: '#856404' }}>
+                            Net result:
+                          </p>
                           {overpayers.map(over =>
                             underpayers.map(under => {
                               const amount = Math.min(over.net, Math.abs(under.net));
                               if (amount > 0.01) {
                                 return (
                                   <div key={`${under.name}-${over.name}`} style={styles.previewRow}>
-                                    <span>{under.name} owes {over.name}</span>
+                                    <span><strong>{under.name}</strong> owes <strong>{over.name}</strong></span>
                                     <span style={styles.previewAmount}>Rs {amount.toFixed(2)}</span>
                                   </div>
                                 );
@@ -475,7 +508,7 @@ export default function GroupDetailPage() {
             )}
           </div>
 
-          {/* Settlements History */}
+          {/* Settlements history */}
           {settlements.length > 0 && (
             <div style={styles.card}>
               <div style={styles.cardHeader}>
@@ -516,7 +549,6 @@ export default function GroupDetailPage() {
               onChange={(e) => setExpenseAmount(e.target.value)}
               style={styles.input}
             />
-
             <p style={styles.modalLabel}>💰 Who paid how much?</p>
             {payments.map((p) => (
               <div key={p.name} style={styles.participantRow}>
@@ -530,7 +562,6 @@ export default function GroupDetailPage() {
                 />
               </div>
             ))}
-
             {expenseAmount && (
               <div style={{
                 ...styles.paymentTotal,
@@ -540,31 +571,9 @@ export default function GroupDetailPage() {
                 Total: Rs {payments.reduce((s, p) => s + p.amount, 0).toFixed(2)} / Rs {parseFloat(expenseAmount).toFixed(2)}
               </div>
             )}
-
-            {whoNeedsToPay.length > 0 && (
-              <div style={styles.previewBox}>
-                <p style={styles.previewBoxTitle}>💸 Who needs to pay</p>
-                {whoNeedsToPay.map((p, idx) => (
-                  <div key={idx} style={styles.previewBoxRow}>
-                    <span>{p.name}</span>
-                    <span>Rs {p.amountToPay.toFixed(2)}</span>
-                  </div>
-                ))}
-                <p style={styles.equalShareNote}>Equal share: Rs {equalShare.toFixed(2)}</p>
-              </div>
-            )}
-
             <div style={styles.modalActions}>
-              <button onClick={() => setShowAddExpense(false)} style={styles.cancelButton}>
-                Cancel
-              </button>
-              <button
-                onClick={handleAddExpense}
-                disabled={Math.abs(payments.reduce((s, p) => s + p.amount, 0) - parseFloat(expenseAmount || '0')) >= 0.01}
-                style={styles.submitButton}
-              >
-                Add Expense
-              </button>
+              <button onClick={() => setShowAddExpense(false)} style={styles.cancelButton}>Cancel</button>
+              <button onClick={handleAddExpense} disabled={Math.abs(payments.reduce((s, p) => s + p.amount, 0) - parseFloat(expenseAmount || '0')) >= 0.01} style={styles.submitButton}>Add Expense</button>
             </div>
           </div>
         </div>
@@ -603,12 +612,8 @@ export default function GroupDetailPage() {
               style={styles.input}
             />
             <div style={styles.modalActions}>
-              <button onClick={() => setShowSettleModal(false)} style={styles.cancelButton}>
-                Cancel
-              </button>
-              <button onClick={handleSettleUp} style={styles.submitButton}>
-                Record
-              </button>
+              <button onClick={() => setShowSettleModal(false)} style={styles.cancelButton}>Cancel</button>
+              <button onClick={handleSettleUp} style={styles.submitButton}>Record</button>
             </div>
           </div>
         </div>
@@ -617,7 +622,7 @@ export default function GroupDetailPage() {
   );
 }
 
-// Styles (kept as object for consistency with dashboard)
+// Styles
 const styles: { [key: string]: React.CSSProperties } = {
   loadingContainer: {
     minHeight: "100vh",
@@ -634,6 +639,29 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderTopColor: "#10b981",
     borderRadius: "50%",
     animation: "spin 1s linear infinite",
+  },
+  errorContainer: {
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f9fafb",
+  },
+  errorBox: {
+    textAlign: "center",
+    padding: "2rem",
+    backgroundColor: "white",
+    borderRadius: "1rem",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+  },
+  retryButton: {
+    padding: "0.5rem 1rem",
+    backgroundColor: "#10b981",
+    color: "white",
+    border: "none",
+    borderRadius: "0.5rem",
+    marginRight: "1rem",
+    cursor: "pointer",
   },
   container: {
     maxWidth: "1200px",
@@ -663,6 +691,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   headerRight: {
     display: "flex",
     gap: "1rem",
+    alignItems: "center",
   },
   primaryButton: {
     display: "flex",
@@ -691,6 +720,18 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: 500,
     cursor: "pointer",
     transition: "background-color 0.2s",
+  },
+  refreshButton: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "0.5rem",
+    backgroundColor: "white",
+    border: "1px solid #d1d5db",
+    borderRadius: "0.5rem",
+    cursor: "pointer",
+    color: "#6b7280",
+    marginRight: "0.5rem",
   },
   titleSection: {
     marginBottom: "2rem",
