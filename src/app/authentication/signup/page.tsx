@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react"; // Make sure useRef is imported
+import { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
@@ -19,60 +19,62 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Declare refs
+  // Refs for direct DOM access
   const passwordRef = useRef<HTMLInputElement>(null);
   const confirmRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-  // Use state values instead of refs
-  const trimmedPassword = password.trim();
-  const trimmedConfirm = confirmPassword.trim();
+    // Get values from refs to ensure latest values
+    const passwordValue = passwordRef.current?.value || "";
+    const confirmValue = confirmRef.current?.value || "";
 
-  console.log("Validating with state values:", { trimmedPassword, trimmedConfirm });
+    console.log("Password:", passwordValue);
+    console.log("Confirm:", confirmValue);
 
-  if (password !== confirmPassword) {
-  setError("Passwords do not match");
-  setLoading(false);
-  return;
-}
-
- if (password.length < 6) {
-  setError("Password must be at least 6 characters");
-  setLoading(false);
-  return;
-}
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        username: username.trim(), 
-        email: email.trim(), 
-        password: password.trim()
-      }),
-      credentials: "include",
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Signup failed");
+    if (passwordValue !== confirmValue) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
     }
 
-    setToken(data.data.token);
-    localStorage.setItem("user", JSON.stringify(data.data.user));
-    router.push("/dashboard");
-  } catch (err: any) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+    if (passwordValue.length < 6) {
+      setError("Password must be at least 6 characters");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          username: username.trim(), 
+          email: email.trim(), 
+          password: passwordValue,
+          confirmPassword: confirmValue 
+        }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Signup failed");
+      }
+
+      setToken(data.data.token);
+      localStorage.setItem("user", JSON.stringify(data.data.user));
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#fff" }}>
@@ -189,16 +191,6 @@ export default function SignupPage() {
                 {error}
               </div>
             )}
-
-            {/* Debug display */}
-            <div style={{ marginBottom: '20px', padding: '10px', background: '#e0f2fe', borderRadius: '8px' }}>
-              <p><strong>Debug:</strong></p>
-              <p>Password JSON: {JSON.stringify(password)}</p>
-              <p>Confirm JSON: {JSON.stringify(confirmPassword)}</p>
-              <p style={{ color: password === confirmPassword ? 'green' : 'red' }}>
-                Match: {password === confirmPassword ? '✅ YES' : '❌ NO'}
-              </p>
-            </div>
 
             <button style={{
               display: "flex",

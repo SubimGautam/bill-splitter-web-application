@@ -5,19 +5,17 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value
   const { pathname } = request.nextUrl
 
-  // Public routes that don't require authentication
-  const publicPaths = ['/authentication/login', '/authentication/signup', '/']
+  // Public routes (no auth required)
+  const publicPaths = ['/', '/authentication/login', '/authentication/signup', '/admin/login']
   const isPublicPath = publicPaths.includes(pathname)
 
-  // Protect dashboard (and any future protected routes)
-  if (pathname.startsWith('/dashboard') && !token) {
-    const loginUrl = new URL('/authentication/login', request.url)
-    loginUrl.searchParams.set('from', pathname)
-    return NextResponse.redirect(loginUrl)
+  // If there's no token and trying to access protected route, redirect to login
+  if (!token && !isPublicPath) {
+    if (pathname.startsWith('/admin')) {
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    }
+    return NextResponse.redirect(new URL('/authentication/login', request.url))
   }
-
-  // IMPORTANT: We NO LONGER redirect logged-in users AWAY from login/signup
-  // This allows users to see the pages even when authenticated (for testing, logout flow, etc.)
 
   return NextResponse.next()
 }
@@ -25,6 +23,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/admin/:path*',
     '/authentication/login',
     '/authentication/signup',
   ],

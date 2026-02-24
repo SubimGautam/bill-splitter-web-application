@@ -24,7 +24,7 @@ export default function Sidebar() {
         .admin-nav-item { transition: background 0.15s, color 0.15s; }
       `}</style>
       <aside style={{
-        width: "240px",
+        width: "260px",
         flexShrink: 0,
         backgroundColor: "white",
         borderRight: "1px solid #e5e7eb",
@@ -35,21 +35,28 @@ export default function Sidebar() {
         flexDirection: "column",
         overflow: "hidden",
       }}>
-        {/* Logo — same as user dashboard */}
+        {/* Logo */}
         <div style={{
-          padding: "1.25rem 1rem",
+          padding: "1.5rem 1.25rem",
           borderBottom: "1px solid #f3f4f6",
         }}>
-          <div style={{ fontSize: "1.375rem", fontWeight: "bold", color: "#10b981", paddingLeft: "0.5rem" }}>
+          <div style={{ fontSize: "1.375rem", fontWeight: "bold", color: "#10b981" }}>
             💰 Splito
           </div>
-          <div style={{ fontSize: "0.65rem", color: "#9ca3af", paddingLeft: "0.5rem", marginTop: "2px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <div style={{ fontSize: "0.65rem", color: "#9ca3af", marginTop: "4px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Admin Panel
           </div>
         </div>
 
-        {/* Nav — same style as user dashboard nav */}
-        <nav style={{ flex: 1, padding: "0.75rem", display: "flex", flexDirection: "column", gap: "2px", overflowY: "auto" }}>
+        {/* Navigation */}
+        <nav style={{ 
+          flex: 1, 
+          padding: "1rem 0.75rem", 
+          display: "flex", 
+          flexDirection: "column", 
+          gap: "2px", 
+          overflowY: "auto" 
+        }}>
           {ADMIN_LINKS.map((link) => {
             const Icon = link.icon;
             const active = isActive(link.href);
@@ -60,8 +67,8 @@ export default function Sidebar() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "0.625rem",
-                    padding: "0.625rem 0.75rem",
+                    gap: "0.75rem",
+                    padding: "0.75rem 1rem",
                     borderRadius: "0.5rem",
                     fontSize: "0.875rem",
                     fontWeight: active ? 600 : 500,
@@ -80,13 +87,21 @@ export default function Sidebar() {
 
         {/* Footer */}
         <div style={{
-          padding: "0.875rem 1.25rem",
+          padding: "1rem 1.25rem",
           borderTop: "1px solid #f3f4f6",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "space-between",
         }}>
           <span style={{ fontSize: "0.7rem", color: "#d1d5db" }}>v1.0.0</span>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#10b981", display: "inline-block" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ 
+              width: 8, 
+              height: 8, 
+              borderRadius: "50%", 
+              backgroundColor: "#10b981", 
+              display: "inline-block" 
+            }} />
             <span style={{ fontSize: "0.7rem", color: "#10b981", fontWeight: 500 }}>Live</span>
           </div>
         </div>

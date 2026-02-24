@@ -29,11 +29,9 @@ async function getStats() {
     const groupsData = await groupsRes.json();
     const groups = groupsData.success ? groupsData.data : [];
     
-    // Calculate total expenses and settlements from groups
     let totalExpenses = 0;
     let totalSettlements = 0;
 
-    // Fetch details for each group to get expenses and settlements
     for (const group of groups) {
       try {
         const groupDetailRes = await fetch(`${API_BASE_URL}/groups/${group._id}/balances`, {
@@ -43,12 +41,9 @@ async function getStats() {
         const groupDetailData = await groupDetailRes.json();
         
         if (groupDetailData.success && groupDetailData.data) {
-          // Count expenses
           if (groupDetailData.data.expenses && Array.isArray(groupDetailData.data.expenses)) {
             totalExpenses += groupDetailData.data.expenses.length;
           }
-          
-          // Count settlements
           if (groupDetailData.data.settlements && Array.isArray(groupDetailData.data.settlements)) {
             totalSettlements += groupDetailData.data.settlements.length;
           }
@@ -121,18 +116,18 @@ export default async function AdminDashboard() {
   return (
     <>
       <style>{`
-        .stat-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important; transform: translateY(-1px); }
-        .stat-card { transition: box-shadow 0.2s, transform 0.2s; }
+        .stat-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important; transform: translateY(-2px); }
+        .stat-card { transition: all 0.2s ease; }
         .quick-link:hover { border-color: #10b981 !important; background: #f0fdf4 !important; }
-        .quick-link { transition: border-color 0.15s, background 0.15s; }
+        .quick-link { transition: all 0.15s ease; }
       `}</style>
       <div>
         {/* Page header */}
         <div style={{ marginBottom: "2rem" }}>
-          <h1 style={{ fontSize: "1.625rem", fontWeight: 700, color: "#111827", marginBottom: "0.25rem" }}>
+          <h1 style={{ fontSize: "1.875rem", fontWeight: 700, color: "#111827", marginBottom: "0.5rem" }}>
             Dashboard
           </h1>
-          <p style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
+          <p style={{ fontSize: "0.95rem", color: "#6b7280" }}>
             Welcome back — here's what's happening across your platform.
           </p>
         </div>
@@ -140,9 +135,9 @@ export default async function AdminDashboard() {
         {/* Stat cards */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "1rem",
-          marginBottom: "1.5rem",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: "1.5rem",
+          marginBottom: "2rem",
         }}>
           {statCards.map((card) => {
             const Icon = card.icon;
@@ -150,26 +145,26 @@ export default async function AdminDashboard() {
               <Link key={card.label} href={card.href} style={{ textDecoration: "none" }}>
                 <div className="stat-card" style={{
                   backgroundColor: "white",
-                  padding: "1.25rem 1.5rem",
-                  borderRadius: "0.875rem",
+                  padding: "1.5rem",
+                  borderRadius: "1rem",
                   border: "1px solid #f3f4f6",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                   cursor: "pointer",
                 }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1rem" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.25rem" }}>
                     <div style={{
-                      width: "42px", height: "42px", borderRadius: "10px",
+                      width: "48px", height: "48px", borderRadius: "12px",
                       backgroundColor: card.lightBg, border: `1px solid ${card.border}`,
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
-                      <Icon size={20} style={{ color: card.color }} />
+                      <Icon size={22} style={{ color: card.color }} />
                     </div>
-                    <FiArrowUpRight size={16} style={{ color: "#d1d5db" }} />
+                    <FiArrowUpRight size={18} style={{ color: "#9ca3af" }} />
                   </div>
-                  <div style={{ fontSize: "1.875rem", fontWeight: 700, color: "#111827", lineHeight: 1, marginBottom: "0.375rem" }}>
+                  <div style={{ fontSize: "2rem", fontWeight: 700, color: "#111827", lineHeight: 1, marginBottom: "0.5rem" }}>
                     {card.value}
                   </div>
-                  <div style={{ fontSize: "0.8rem", color: "#9ca3af", fontWeight: 500 }}>{card.label}</div>
+                  <div style={{ fontSize: "0.875rem", color: "#6b7280", fontWeight: 500 }}>{card.label}</div>
                 </div>
               </Link>
             );
@@ -177,43 +172,43 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Bottom row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "1rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "1.5rem" }}>
           {/* Quick actions */}
           <div style={{
             backgroundColor: "white",
-            borderRadius: "0.875rem",
+            borderRadius: "1rem",
             border: "1px solid #f3f4f6",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
             padding: "1.5rem",
           }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
-              <h2 style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#111827" }}>Quick Actions</h2>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "#111827", marginBottom: "1.25rem" }}>
+              Quick Actions
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               {quickLinks.map((l) => {
                 const Icon = l.icon;
                 return (
                   <Link key={l.href} href={l.href} style={{ textDecoration: "none" }}>
                     <div className="quick-link" style={{
-                      display: "flex", alignItems: "center", gap: "0.875rem",
-                      padding: "0.875rem 1rem",
+                      display: "flex", alignItems: "center", gap: "1rem",
+                      padding: "1rem",
                       backgroundColor: "white",
                       border: "1px solid #e5e7eb",
-                      borderRadius: "0.625rem",
+                      borderRadius: "0.75rem",
                       cursor: "pointer",
                     }}>
                       <div style={{
-                        width: "38px", height: "38px", borderRadius: "9px",
+                        width: "40px", height: "40px", borderRadius: "10px",
                         backgroundColor: "#f0fdf4", border: "1px solid #d1fae5",
                         display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                       }}>
-                        <Icon size={17} style={{ color: "#10b981" }} />
+                        <Icon size={18} style={{ color: "#10b981" }} />
                       </div>
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111827", marginBottom: "2px" }}>{l.label}</p>
-                        <p style={{ fontSize: "0.75rem", color: "#9ca3af" }}>{l.desc}</p>
+                        <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#111827", marginBottom: "4px" }}>{l.label}</p>
+                        <p style={{ fontSize: "0.8125rem", color: "#6b7280" }}>{l.desc}</p>
                       </div>
-                      <FiArrowRight size={16} style={{ color: "#d1d5db" }} />
+                      <FiArrowRight size={18} style={{ color: "#9ca3af" }} />
                     </div>
                   </Link>
                 );
@@ -224,12 +219,14 @@ export default async function AdminDashboard() {
           {/* System status */}
           <div style={{
             backgroundColor: "white",
-            borderRadius: "0.875rem",
+            borderRadius: "1rem",
             border: "1px solid #f3f4f6",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
             padding: "1.5rem",
           }}>
-            <h2 style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#111827", marginBottom: "1.25rem" }}>System Status</h2>
+            <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "#111827", marginBottom: "1.25rem" }}>
+              System Status
+            </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
               {[
                 { label: "API Server", status: "Operational", uptime: "99.9%" },
@@ -238,31 +235,33 @@ export default async function AdminDashboard() {
               ].map((s, i, arr) => (
                 <div key={s.label} style={{
                   display: "flex", justifyContent: "space-between", alignItems: "center",
-                  padding: "0.75rem 0",
+                  padding: "1rem 0",
                   borderBottom: i < arr.length - 1 ? "1px solid #f3f4f6" : "none",
                 }}>
                   <div>
-                    <p style={{ fontSize: "0.8rem", fontWeight: 500, color: "#374151", marginBottom: "2px" }}>{s.label}</p>
-                    <p style={{ fontSize: "0.7rem", color: "#9ca3af" }}>Uptime {s.uptime}</p>
+                    <p style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151", marginBottom: "4px" }}>{s.label}</p>
+                    <p style={{ fontSize: "0.75rem", color: "#9ca3af" }}>Uptime {s.uptime}</p>
                   </div>
                   <span style={{
-                    display: "inline-flex", alignItems: "center", gap: "5px",
-                    fontSize: "0.7rem", color: "#10b981", fontWeight: 600,
+                    display: "inline-flex", alignItems: "center", gap: "6px",
+                    fontSize: "0.75rem", color: "#10b981", fontWeight: 600,
                     backgroundColor: "#f0fdf4", border: "1px solid #d1fae5",
-                    borderRadius: "999px", padding: "3px 10px",
+                    borderRadius: "999px", padding: "4px 12px",
                   }}>
-                    <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: "#10b981", display: "inline-block" }} />
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#10b981", display: "inline-block" }} />
                     OK
                   </span>
                 </div>
               ))}
             </div>
             <div style={{
-              marginTop: "1.25rem", padding: "0.75rem",
-              backgroundColor: "#f0fdf4", borderRadius: "0.5rem",
+              marginTop: "1.25rem", padding: "1rem",
+              backgroundColor: "#f0fdf4", borderRadius: "0.75rem",
               border: "1px solid #d1fae5", textAlign: "center",
             }}>
-              <p style={{ fontSize: "0.75rem", color: "#10b981", fontWeight: 600 }}>✓ All systems operational</p>
+              <p style={{ fontSize: "0.8125rem", color: "#10b981", fontWeight: 600 }}>
+                ✓ All systems operational
+              </p>
             </div>
           </div>
         </div>

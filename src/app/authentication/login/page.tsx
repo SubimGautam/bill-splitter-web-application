@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
+    useEffect(() => {
     setMounted(true);
     
     // Log when component mounts

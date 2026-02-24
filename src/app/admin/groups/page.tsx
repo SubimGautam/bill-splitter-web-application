@@ -8,10 +8,19 @@ export default async function GroupsPage() {
 
     return (
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.75rem" }}>
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          marginBottom: "1.5rem" 
+        }}>
           <div>
-            <h1 style={{ fontSize: "1.625rem", fontWeight: 700, color: "#111827", marginBottom: "0.25rem" }}>Groups</h1>
-            <p style={{ fontSize: "0.875rem", color: "#9ca3af" }}>Manage and monitor all groups in the system</p>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#111827", marginBottom: "0.25rem" }}>
+              Groups
+            </h1>
+            <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+              Manage and monitor all groups in the system
+            </p>
           </div>
           <div style={{
             display: "flex", alignItems: "center", gap: "0.5rem",
@@ -31,8 +40,8 @@ export default async function GroupsPage() {
   } catch {
     return (
       <div>
-        <div style={{ marginBottom: "1.75rem" }}>
-          <h1 style={{ fontSize: "1.625rem", fontWeight: 700, color: "#111827" }}>Groups</h1>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#111827" }}>Groups</h1>
         </div>
         <div style={{
           backgroundColor: "white", borderRadius: "0.875rem",

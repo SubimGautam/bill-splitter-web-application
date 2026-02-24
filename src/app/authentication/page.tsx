@@ -21,12 +21,6 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // ❌ REMOVE THIS ENTIRE BLOCK
-  // if (user) {
-  //   router.replace("/dashboard");
-  //   return null;
-  // }
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
