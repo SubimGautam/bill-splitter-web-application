@@ -25,6 +25,7 @@ export default function HomePage() {
               <Link href="#pricing" className="nav-link">Pricing</Link>
             </div>
             <div className="nav-actions">
+              <Link href="/admin/login" className="nav-link admin-link">Admin</Link>
               <Link href="/authentication/login" className="btn-ghost">Log in</Link>
               <Link href="/authentication/signup" className="btn-primary">Get started free</Link>
             </div>
@@ -343,8 +344,11 @@ export default function HomePage() {
       <style jsx>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
+        html, body { width: 100%; margin: 0; padding: 0; }
+
         .page {
           min-height: 100vh;
+          width: 100%;
           background: #FAFAFA;
           font-family: 'DM Sans', system-ui, sans-serif;
           color: #111827;
