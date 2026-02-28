@@ -91,7 +91,7 @@ export default async function AdminDashboard() {
       label: "Settlements",
       value: stats.settlements,
       icon: FiTrendingUp,
-      href: "/admin",
+      href: "/admin/settlements",
       color: "#f59e0b",
       lightBg: "#fffbeb",
       border: "#fde68a",
@@ -100,7 +100,7 @@ export default async function AdminDashboard() {
       label: "Total Expenses",
       value: stats.expenses,
       icon: FiDollarSign,
-      href: "/admin",
+      href: "/admin/expenses",
       color: "#8b5cf6",
       lightBg: "#f5f3ff",
       border: "#ddd6fe",
@@ -142,13 +142,13 @@ export default async function AdminDashboard() {
           {statCards.map((card) => {
             const Icon = card.icon;
             return (
-              <Link key={card.label} href={card.href} style={{ textDecoration: "none" }}>
+              <Link key={card.href} href={card.href} style={{ textDecoration: "none" }}>
                 <div className="stat-card" style={{
                   backgroundColor: "white",
                   padding: "1.5rem",
                   borderRadius: "1rem",
                   border: "1px solid #f3f4f6",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
                   cursor: "pointer",
                 }}>
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.25rem" }}>

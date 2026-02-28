@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiHome, FiUsers, FiFolder, FiUser, FiSettings, FiTrendingUp, FiDollarSign } from "react-icons/fi";
+import { FiHome, FiUsers, FiFolder, FiUser, FiTrendingUp, FiDollarSign } from "react-icons/fi";
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Dashboard", icon: FiHome },
   { href: "/admin/users", label: "Users", icon: FiUsers },
   { href: "/admin/groups", label: "Groups", icon: FiFolder },
-  { href: "/admin/profile", label: "Profile", icon: FiUser },
-  { href: "/admin/settings", label: "Settings", icon: FiSettings },
+  { href: "/admin/settlements", label: "Settlements", icon: FiTrendingUp }, // fixed href
   { href: "/admin/expenses", label: "Expenses", icon: FiDollarSign },
   { href: "/admin/profile", label: "Profile", icon: FiUser },
 ];
@@ -18,6 +17,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const isActive = (href: string) =>
     href === "/admin" ? pathname === href : pathname?.startsWith(href);
+
 
   return (
     <>
@@ -60,10 +60,10 @@ export default function Sidebar() {
           overflowY: "auto" 
         }}>
           {ADMIN_LINKS.map((link) => {
-            const Icon = link.icon;
-            const active = isActive(link.href);
-            return (
-              <Link key={link.href} href={link.href} style={{ textDecoration: "none" }}>
+          const Icon = link.icon;
+          const active = isActive(link.href);
+          return (
+            <Link key={link.href} href={link.href} style={{ textDecoration: "none" }}>
                 <div
                   className={!active ? "admin-nav-item" : ""}
                   style={{
