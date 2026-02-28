@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiHome, FiUsers, FiFolder, FiUser, FiSettings } from "react-icons/fi";
+import { FiHome, FiUsers, FiFolder, FiUser, FiSettings, FiTrendingUp, FiDollarSign } from "react-icons/fi";
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Dashboard", icon: FiHome },
@@ -10,6 +10,8 @@ const ADMIN_LINKS = [
   { href: "/admin/groups", label: "Groups", icon: FiFolder },
   { href: "/admin/profile", label: "Profile", icon: FiUser },
   { href: "/admin/settings", label: "Settings", icon: FiSettings },
+  { href: "/admin/expenses", label: "Expenses", icon: FiDollarSign },
+  { href: "/admin/profile", label: "Profile", icon: FiUser },
 ];
 
 export default function Sidebar() {
