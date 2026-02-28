@@ -40,6 +40,14 @@ export async function getGroups() {
   return fetchWithAuth("/admin/groups");
 }
 
+export async function getAllSettlements() {
+  return fetchWithAuth("/admin/settlements");
+}
+
+export async function getAllExpenses() {
+  return fetchWithAuth("/admin/expenses");
+}
+
 // Delete a group (admin only)
 export async function deleteGroup(groupId: string) {
   return fetchWithAuth(`/admin/groups/${groupId}`, { method: "DELETE" });
