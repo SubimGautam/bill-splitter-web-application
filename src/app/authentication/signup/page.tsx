@@ -19,7 +19,6 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Refs for direct DOM access
   const passwordRef = useRef<HTMLInputElement>(null);
   const confirmRef = useRef<HTMLInputElement>(null);
 
@@ -28,7 +27,6 @@ export default function SignupPage() {
     setLoading(true);
     setError("");
 
-    // Get values from refs to ensure latest values
     const passwordValue = passwordRef.current?.value || "";
     const confirmValue = confirmRef.current?.value || "";
 
@@ -51,11 +49,11 @@ export default function SignupPage() {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          username: username.trim(), 
-          email: email.trim(), 
+        body: JSON.stringify({
+          username: username.trim(),
+          email: email.trim(),
           password: passwordValue,
-          confirmPassword: confirmValue 
+          confirmPassword: confirmValue
         }),
         credentials: "include",
       });
@@ -99,7 +97,8 @@ export default function SignupPage() {
         alignItems: "center",
         padding: "1.5rem 2.5rem"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        {/* Clickable logo → landing page */}
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.75rem", textDecoration: "none" }}>
           <div style={{
             width: "2.25rem",
             height: "2.25rem",
@@ -107,12 +106,13 @@ export default function SignupPage() {
             borderRadius: "0.375rem",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
+            transition: "transform 0.15s"
           }}>
             <span style={{ color: "white", fontWeight: "bold", fontSize: "1.125rem" }}>$</span>
           </div>
           <span style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#111827" }}>Splito</span>
-        </div>
+        </Link>
 
         <div style={{ display: "flex", gap: "1rem" }}>
           <Link href="/authentication/signup" style={{
@@ -140,13 +140,13 @@ export default function SignupPage() {
         </div>
       </header>
 
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
+      <div style={{
+        display: "flex",
+        minHeight: "100vh",
         paddingTop: "5rem",
         flexDirection: "column"
       }} className="main-container">
-        
+
         <div style={{
           display: "none",
           alignItems: "center",

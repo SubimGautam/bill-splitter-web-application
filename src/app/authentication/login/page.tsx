@@ -15,22 +15,20 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
 
-    useEffect(() => {
+  useEffect(() => {
     setMounted(true);
-    
-    // Log when component mounts
+
     console.log('🔵 Login page mounted');
-    
+
     const token = localStorage.getItem('token');
     console.log('🔵 Token in localStorage:', token ? 'exists' : 'none');
-    
-    // Check cookie
+
     const cookieToken = document.cookie
       .split('; ')
       .find(row => row.startsWith('token='))
       ?.split('=')[1];
     console.log('🔵 Token in cookie:', cookieToken ? 'exists' : 'none');
-    
+
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -40,7 +38,7 @@ export default function LoginPage() {
 
     try {
       console.log('🔵 Login attempt with:', formData.email);
-      
+
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -59,7 +57,7 @@ export default function LoginPage() {
         document.cookie = `token=${data.data.token}; path=/; max-age=604800; samesite=lax`;
         localStorage.setItem("token", data.data.token);
         localStorage.setItem("user", JSON.stringify(data.data.user));
-        
+
         console.log('🔵 Token set, redirecting to dashboard...');
         router.push("/dashboard");
       }
@@ -102,7 +100,7 @@ export default function LoginPage() {
           .desktop-right-form { width: 40% !important; }
         }
       `}</style>
-      
+
       <header style={{
         position: "absolute",
         top: 0,
@@ -113,7 +111,8 @@ export default function LoginPage() {
         alignItems: "center",
         padding: "1.5rem 2.5rem"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        {/* Clickable logo → landing page */}
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.75rem", textDecoration: "none" }}>
           <div style={{
             width: "2.25rem",
             height: "2.25rem",
@@ -121,12 +120,13 @@ export default function LoginPage() {
             borderRadius: "0.375rem",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
+            transition: "transform 0.15s"
           }}>
             <span style={{ color: "white", fontWeight: "bold", fontSize: "1.125rem" }}>$</span>
           </div>
           <span style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#111827" }}>Splito</span>
-        </div>
+        </Link>
 
         <div style={{ display: "flex", gap: "1rem" }}>
           <Link href="/authentication/signup" style={{
@@ -154,13 +154,13 @@ export default function LoginPage() {
         </div>
       </header>
 
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
+      <div style={{
+        display: "flex",
+        minHeight: "100vh",
         paddingTop: "5rem",
         flexDirection: "column"
       }} className="main-container">
-        
+
         <div style={{
           display: "none",
           alignItems: "center",
