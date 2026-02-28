@@ -306,7 +306,7 @@ export default function DashboardPage() {
         {/* Render content based on active tab */}
         {activeTab === "dashboard" && (
           <>
-            {/* Stats Cards */}
+            {/* Stats Cards — "You are owed" removed */}
             <div style={styles.statsGrid}>
               <div style={styles.statCard}>
                 <p style={styles.statLabel}>Total Groups</p>
@@ -319,10 +319,6 @@ export default function DashboardPage() {
               <div style={styles.statCard}>
                 <p style={styles.statLabel}>Pending Settlements</p>
                 <p style={styles.statValue}>3</p>
-              </div>
-              <div style={styles.statCard}>
-                <p style={styles.statLabel}>You are owed</p>
-                <p style={styles.statValue}>$124.50</p>
               </div>
             </div>
 
@@ -414,7 +410,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Right Column: Chart & Summary */}
+              {/* Right Column: Charts only — Quick Summary removed */}
               <div style={styles.rightColumn}>
                 <div style={styles.chartCard}>
                   <h3 style={styles.chartTitle}>Balances by Group</h3>
@@ -450,22 +446,6 @@ export default function DashboardPage() {
                       <Tooltip />
                     </PieChart>
                   </ResponsiveContainer>
-                </div>
-
-                <div style={styles.summaryCard}>
-                  <h3 style={styles.chartTitle}>Quick Summary</h3>
-                  <div style={styles.summaryItem}>
-                    <span>You owe</span>
-                    <strong>$45.20</strong>
-                  </div>
-                  <div style={styles.summaryItem}>
-                    <span>You are owed</span>
-                    <strong>$124.50</strong>
-                  </div>
-                  <div style={styles.summaryItem}>
-                    <span>Pending requests</span>
-                    <strong>3</strong>
-                  </div>
                 </div>
               </div>
             </div>
