@@ -1,18 +1,14 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",   // change to "node" for Jest
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
@@ -26,7 +22,8 @@
       "@/*": [
         "./src/*"
       ]
-    }
+    },
+    "types": ["jest", "@testing-library/jest-dom"]  // Add this line
   },
   "include": [
     "next-env.d.ts",
@@ -34,7 +31,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    "jest.setup.js"  // Add this if you have a jest.setup.js file
   ],
   "exclude": [
     "node_modules"

@@ -1,4 +1,4 @@
-"use server";
+// src/lib/actions/admin-actions.ts
 
 import { cookies } from "next/headers";
 
@@ -48,12 +48,12 @@ export async function deleteGroup(groupId: string) {
   return fetchWithAuth(`/admin/groups/${groupId}`, { method: "DELETE" });
 }
 
-// Get all expenses (admin only) - NEW
+// Get all expenses (admin only)
 export async function getAllExpenses() {
   return fetchWithAuth("/admin/expenses");
 }
 
-// Get all settlements (admin only) - NEW
+// Get all settlements (admin only)
 export async function getAllSettlements() {
   return fetchWithAuth("/admin/settlements");
 }
@@ -81,4 +81,66 @@ export async function updateProfile(formData: FormData) {
     throw new Error(data.message || "Update failed");
   }
   return data;
+}
+
+// Add getStats function for admin dashboard
+export async function getStats() {
+  try {
+    const cookieStore = cookies();
+    const token = (await cookieStore).get("token")?.value;
+
+    if (!token) {
+      return { users: 0, groups: 0, settlements: 0, expenses: 0 };
+    }
+
+    // Fetch users count
+    const usersRes = await fetch(`${API_BASE_URL}/admin/users`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store'
+    });
+    const usersData = await usersRes.json();
+    const users = usersData.success ? usersData.data.length : 0;
+
+    // Fetch groups
+    const groupsRes = await fetch(`${API_BASE_URL}/admin/groups`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store'
+    });
+    const groupsData = await groupsRes.json();
+    const groups = groupsData.success ? groupsData.data : [];
+    
+    let totalExpenses = 0;
+    let totalSettlements = 0;
+
+    for (const group of groups) {
+      try {
+        const groupDetailRes = await fetch(`${API_BASE_URL}/groups/${group._id}/balances`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store'
+        });
+        const groupDetailData = await groupDetailRes.json();
+        
+        if (groupDetailData.success && groupDetailData.data) {
+          if (groupDetailData.data.expenses && Array.isArray(groupDetailData.data.expenses)) {
+            totalExpenses += groupDetailData.data.expenses.length;
+          }
+          if (groupDetailData.data.settlements && Array.isArray(groupDetailData.data.settlements)) {
+            totalSettlements += groupDetailData.data.settlements.length;
+          }
+        }
+      } catch (error) {
+        console.error(`Error fetching details for group ${group._id}:`, error);
+      }
+    }
+
+    return { 
+      users, 
+      groups: groups.length, 
+      settlements: totalSettlements, 
+      expenses: totalExpenses 
+    };
+  } catch (error) {
+    console.error("Error fetching stats:", error);
+    return { users: 0, groups: 0, settlements: 0, expenses: 0 };
+  }
 }
