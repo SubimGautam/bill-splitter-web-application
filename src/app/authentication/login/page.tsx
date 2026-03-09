@@ -112,6 +112,7 @@ export default function LoginPage() {
         padding: "1.5rem 2.5rem"
       }}>
         {/* Clickable logo → landing page */}
+        
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.75rem", textDecoration: "none" }}>
           <div style={{
             width: "2.25rem",
@@ -139,6 +140,7 @@ export default function LoginPage() {
             textDecoration: "none"
           }}>
             Sign Up
+            
           </Link>
           <Link href="/authentication/login" style={{
             padding: "0.5rem 1.25rem",
@@ -150,6 +152,7 @@ export default function LoginPage() {
             textDecoration: "none"
           }}>
             Login
+          
           </Link>
         </div>
       </header>
@@ -264,7 +267,7 @@ export default function LoginPage() {
               />
 
               <div style={{ textAlign: "right" }}>
-                <Link href="/forgot-password" style={{
+                <Link href="/authentication/forgot-password" style={{
                   fontSize: "0.875rem",
                   color: "#059669",
                   textDecoration: "none"
